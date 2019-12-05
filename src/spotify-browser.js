@@ -99,6 +99,10 @@ exports.getUserAlbums = (callback) => {
   callSpotifyAPI(API_URL + "/me/albums?limit=50&offset=0", callback);
 }
 
+exports.getUserPlaylists = (callback) => {
+  callSpotifyAPI(API_URL + "/me/playlists?limit=50&offset=0", callback);
+}
+
 exports.getArtist = (id, callback) => {
   callSpotifyAPI(API_URL + "/artists/" + id, callback);
 }

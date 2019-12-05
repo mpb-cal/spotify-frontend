@@ -51,12 +51,20 @@ var ObjectTable = function ObjectTable(_ref) {
 };
 
 var albumSort = function albumSort(a, b) {
-  var a1 = a.album.artists[0].name;
-  var b1 = b.album.artists[0].name;
+  var a1 = a.album.artists[0].name.toUpperCase();
+  var b1 = b.album.artists[0].name.toUpperCase();
   if (a1 < b1) return -1;
   if (b1 < a1) return 1;
   a1 = a.album.release_date;
   b1 = b.album.release_date;
+  if (a1 < b1) return -1;
+  if (b1 < a1) return 1;
+  return 0;
+};
+
+var playlistSort = function playlistSort(a, b) {
+  var a1 = a.name.toUpperCase();
+  var b1 = b.name.toUpperCase();
   if (a1 < b1) return -1;
   if (b1 < a1) return 1;
   return 0;
@@ -71,12 +79,15 @@ var Spotifyer = function (_React$Component) {
     var _this = _possibleConstructorReturn(this, (Spotifyer.__proto__ || Object.getPrototypeOf(Spotifyer)).call(this, props));
 
     _this.clickAlbumsButton = _this.clickAlbumsButton.bind(_this);
+    _this.changeShowTracks = _this.changeShowTracks.bind(_this);
 
     _this.state = {
       ready: false,
       albums: [],
       user: {},
-      userAlbums: []
+      userAlbums: [],
+      userPlaylists: [],
+      showTracks: true
     };
     return _this;
   }
@@ -107,6 +118,16 @@ var Spotifyer = function (_React$Component) {
             };
           });
         });
+
+        spotify.getUserPlaylists(function (data) {
+          console.log(data);
+
+          _this2.setState(function (state) {
+            return {
+              userPlaylists: [].concat(_toConsumableArray(state.userPlaylists), _toConsumableArray(data.items)).sort(playlistSort)
+            };
+          });
+        });
       });
     }
   }, {
@@ -131,77 +152,229 @@ var Spotifyer = function (_React$Component) {
       });
     }
   }, {
-    key: 'render',
-    value: function render() {
+    key: 'renderPlaylistTable',
+    value: function renderPlaylistTable() {
+      return React.createElement(
+        'table',
+        { border: 1 },
+        React.createElement(
+          'thead',
+          null,
+          React.createElement(
+            'tr',
+            null,
+            React.createElement(
+              'th',
+              null,
+              'Name'
+            ),
+            React.createElement(
+              'th',
+              null,
+              '# of Tracks'
+            )
+          )
+        ),
+        React.createElement(
+          'tbody',
+          null,
+          this.state.userPlaylists.map(function (e, i) {
+            return React.createElement(
+              'tr',
+              { key: i.toString() },
+              React.createElement(
+                'td',
+                null,
+                React.createElement(
+                  'a',
+                  { href: e.external_urls.spotify, target: '_blank', rel: 'noopener noreferrer' },
+                  e.name
+                )
+              ),
+              React.createElement(
+                'td',
+                null,
+                e.tracks.total
+              )
+            );
+          })
+        )
+      );
+    }
+  }, {
+    key: 'changeShowTracks',
+    value: function changeShowTracks(e) {
+      var showTracks = e.target.checked;
+
+      this.setState({
+        showTracks: showTracks
+      });
+    }
+  }, {
+    key: 'renderAlbumTable',
+    value: function renderAlbumTable() {
       var _this4 = this;
 
-      var userAlbums = this.state.userAlbums;
-
+      return React.createElement(
+        'table',
+        { border: 1 },
+        React.createElement(
+          'thead',
+          null,
+          React.createElement(
+            'tr',
+            null,
+            React.createElement(
+              'th',
+              null,
+              React.createElement('input', { type: 'checkbox', id: 'showImage', disabled: true, checked: true, readOnly: true }),
+              React.createElement(
+                'label',
+                { htmlFor: 'showImage' },
+                'Show Image'
+              )
+            ),
+            React.createElement(
+              'th',
+              null,
+              'Artists(s)'
+            ),
+            React.createElement(
+              'th',
+              null,
+              'Album Title',
+              React.createElement('br', null),
+              React.createElement('input', { type: 'checkbox', id: 'showTracks', checked: this.state.showTracks, onChange: this.changeShowTracks }),
+              React.createElement(
+                'label',
+                { htmlFor: 'showTracks' },
+                'Show Tracks'
+              )
+            ),
+            React.createElement(
+              'th',
+              null,
+              'Label'
+            ),
+            React.createElement(
+              'th',
+              null,
+              'Popularity (1-100)'
+            ),
+            React.createElement(
+              'th',
+              null,
+              'Release Date'
+            ),
+            React.createElement(
+              'th',
+              null,
+              '# of Tracks'
+            )
+          )
+        ),
+        React.createElement(
+          'tbody',
+          null,
+          this.state.userAlbums.map(function (e, i) {
+            return React.createElement(
+              'tr',
+              { key: i.toString() },
+              React.createElement(
+                'td',
+                null,
+                React.createElement('img', { src: e.album.images[2].url, alt: '' })
+              ),
+              React.createElement(
+                'td',
+                null,
+                e.album.artists[0].name
+              ),
+              React.createElement(
+                'td',
+                null,
+                React.createElement(
+                  'a',
+                  { href: e.album.external_urls.spotify, target: '_blank', rel: 'noopener noreferrer' },
+                  e.album.name
+                ),
+                _this4.state.showTracks ? React.createElement(
+                  'ol',
+                  null,
+                  e.album.tracks.items.map(function (e2, i2) {
+                    return React.createElement(
+                      'li',
+                      { key: i2.toString() },
+                      React.createElement(
+                        'a',
+                        { href: e2.external_urls.spotify, target: '_blank', rel: 'noopener noreferrer' },
+                        e2.name
+                      ),
+                      '...',
+                      msToDuration(e2.duration_ms)
+                    );
+                  })
+                ) : ""
+              ),
+              React.createElement(
+                'td',
+                null,
+                e.album.label
+              ),
+              React.createElement(
+                'td',
+                null,
+                e.album.popularity
+              ),
+              React.createElement(
+                'td',
+                null,
+                e.album.release_date
+              ),
+              React.createElement(
+                'td',
+                null,
+                e.album.total_tracks
+              )
+            );
+          })
+        )
+      );
+    }
+  }, {
+    key: 'render',
+    value: function render() {
+      var _this5 = this;
 
       return React.createElement(
         'div',
         { className: 'spotifyer' },
+        React.createElement('input', { type: 'checkbox', id: 'showPlaylists', disabled: true, checked: true }),
         React.createElement(
-          'table',
-          { border: 1 },
-          React.createElement('thead', null),
-          React.createElement(
-            'tbody',
-            null,
-            userAlbums.map(function (e, i) {
-              return React.createElement(
-                'tr',
-                { key: i.toString() },
-                React.createElement(
-                  'td',
-                  null,
-                  React.createElement(
-                    'a',
-                    { href: e.album.external_urls.spotify, target: '_blank', rel: 'noopener noreferrer' },
-                    e.album.name
-                  )
-                ),
-                React.createElement(
-                  'td',
-                  null,
-                  e.album.artists[0].name
-                ),
-                React.createElement(
-                  'td',
-                  null,
-                  e.album.label
-                ),
-                React.createElement(
-                  'td',
-                  null,
-                  e.album.popularity
-                ),
-                React.createElement(
-                  'td',
-                  null,
-                  e.album.release_date
-                ),
-                React.createElement(
-                  'td',
-                  null,
-                  e.album.total_tracks
-                )
-              );
-            })
-          )
+          'label',
+          { htmlFor: 'showPlaylists' },
+          'Show Playlists'
         ),
+        this.renderPlaylistTable(),
+        React.createElement('input', { type: 'checkbox', id: 'showAlbums', disabled: true, checked: true }),
+        React.createElement(
+          'label',
+          { htmlFor: 'showAlbums' },
+          'Show Albums'
+        ),
+        this.renderAlbumTable(),
         React.createElement(ObjectTable, { object: this.state.user }),
         React.createElement(
           'button',
           { disabled: !this.state.ready, onClick: function onClick() {
-              _this4.clickAlbumsButton(spotify.ACDC_ID);
+              _this5.clickAlbumsButton(spotify.ACDC_ID);
             } },
           'Get AC/DC Albums'
         ),
         React.createElement(
           'button',
           { disabled: !this.state.ready, onClick: function onClick() {
-              _this4.clickAlbumsButton(spotify.NICKLOWE_ID);
+              _this5.clickAlbumsButton(spotify.NICKLOWE_ID);
             } },
           'Get Nick Lowe Albums'
         ),
@@ -272,23 +445,23 @@ var LikeButton = function (_React$Component2) {
   function LikeButton(props) {
     _classCallCheck(this, LikeButton);
 
-    var _this5 = _possibleConstructorReturn(this, (LikeButton.__proto__ || Object.getPrototypeOf(LikeButton)).call(this, props));
+    var _this6 = _possibleConstructorReturn(this, (LikeButton.__proto__ || Object.getPrototypeOf(LikeButton)).call(this, props));
 
-    _this5.state = { liked: false };
-    return _this5;
+    _this6.state = { liked: false };
+    return _this6;
   }
 
   _createClass(LikeButton, [{
     key: 'render',
     value: function render() {
-      var _this6 = this;
+      var _this7 = this;
 
       if (this.state.liked) {
         return 'You liked this.';
       }
 
       return e('button', { onClick: function onClick() {
-          return _this6.setState({ liked: true });
+          return _this7.setState({ liked: true });
         } }, 'Like');
     }
   }]);

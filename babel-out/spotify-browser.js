@@ -77,6 +77,10 @@ exports.getUserAlbums = function (callback) {
   callSpotifyAPI(API_URL + "/me/albums?limit=50&offset=0", callback);
 };
 
+exports.getUserPlaylists = function (callback) {
+  callSpotifyAPI(API_URL + "/me/playlists?limit=50&offset=0", callback);
+};
+
 exports.getArtist = function (id, callback) {
   callSpotifyAPI(API_URL + "/artists/" + id, callback);
 };
