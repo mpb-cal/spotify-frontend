@@ -64,18 +64,22 @@ exports.getAccessToken = (callback) => {
   });
 }
 
-const callSpotifyAPI = (url, callback) => {
+const callSpotifyAPI = (method, url, callback, returnData = null) => {
   axios({
-    method: "get",
+    method: method,
     url: url,
     headers: {
       Authorization: "Bearer " + access_token,
     },
   }).then((response) => {
-    callback(response.data);
+    if (returnData) {
+      callback(response.data, returnData);
+    } else {
+      callback(response.data);
+    }
 
     if (response.data.next !== null) {
-      callSpotifyAPI(response.data.next, callback);
+      callSpotifyAPI(method, response.data.next, callback, returnData);
     }
   })
   .catch((error) => {
@@ -83,35 +87,63 @@ const callSpotifyAPI = (url, callback) => {
   });
 }
 
+const getSpotifyAPI = (url, callback, returnData = null) => {
+  callSpotifyAPI('get', url, callback, returnData);
+}
+
+const postSpotifyAPI = (url, callback, returnData = null) => {
+  callSpotifyAPI('post', url, callback, returnData);
+}
+
+const putSpotifyAPI = (url, callback, returnData = null) => {
+  callSpotifyAPI('put', url, callback, returnData);
+}
+
+const deleteSpotifyAPI = (url, callback, returnData = null) => {
+  callSpotifyAPI('delete', url, callback, returnData);
+}
+
 exports.init = (callback) => {
   exports.getAccessToken(callback);
 }
 
 exports.getUser = (callback) => {
-  callSpotifyAPI(API_URL + "/me", callback);
+  getSpotifyAPI(API_URL + "/me", callback);
 }
 
 exports.getUserProfile = (id, callback) => {
-  callSpotifyAPI(API_URL + "/users/" + id, callback);
+  getSpotifyAPI(API_URL + "/users/" + id, callback);
 }
 
 exports.getUserAlbums = (callback) => {
-  callSpotifyAPI(API_URL + "/me/albums?limit=50&offset=0", callback);
+  getSpotifyAPI(API_URL + "/me/albums?limit=50&offset=0", callback);
 }
 
 exports.getUserPlaylists = (callback) => {
-  callSpotifyAPI(API_URL + "/me/playlists?limit=50&offset=0", callback);
+  getSpotifyAPI(API_URL + "/me/playlists?limit=50&offset=0", callback);
 }
 
 exports.getArtist = (id, callback) => {
-  callSpotifyAPI(API_URL + "/artists/" + id, callback);
+  getSpotifyAPI(API_URL + "/artists/" + id, callback);
 }
 
 exports.getArtistAlbums = (id, callback) => {
-  callSpotifyAPI(API_URL + "/artists/" + id + "/albums?include_groups=album&limit=50", callback);
+  getSpotifyAPI(API_URL + "/artists/" + id + "/albums?include_groups=album&limit=50", callback);
 }
 
 exports.getAlbum = (id, callback) => {
-  callSpotifyAPI(API_URL + "/albums/" + id, callback);
+  getSpotifyAPI(API_URL + "/albums/" + id, callback);
+}
+
+exports.getPlaylistTracks = (id, callback) => {
+  getSpotifyAPI(API_URL + "/playlists/" + id + "/tracks", callback, id);
+}
+
+exports.saveAlbum = (id, callback) => {
+  putSpotifyAPI(API_URL + "/me/albums?ids=" + id, callback);
+}
+
+exports.deletePlaylist = (id, callback) => {
+  deleteSpotifyAPI(API_URL + "/playlists/" + id + '/followers', callback);
 }
 

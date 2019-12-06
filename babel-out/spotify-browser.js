@@ -43,22 +43,52 @@ exports.getAccessToken = function (callback) {
   });
 };
 
-var callSpotifyAPI = function callSpotifyAPI(url, callback) {
+var callSpotifyAPI = function callSpotifyAPI(method, url, callback) {
+  var returnData = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+
   axios({
-    method: "get",
+    method: method,
     url: url,
     headers: {
       Authorization: "Bearer " + access_token
     }
   }).then(function (response) {
-    callback(response.data);
+    if (returnData) {
+      callback(response.data, returnData);
+    } else {
+      callback(response.data);
+    }
 
     if (response.data.next !== null) {
-      callSpotifyAPI(response.data.next, callback);
+      callSpotifyAPI(method, response.data.next, callback, returnData);
     }
   }).catch(function (error) {
     console.log(error);
   });
+};
+
+var getSpotifyAPI = function getSpotifyAPI(url, callback) {
+  var returnData = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+
+  callSpotifyAPI('get', url, callback, returnData);
+};
+
+var postSpotifyAPI = function postSpotifyAPI(url, callback) {
+  var returnData = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+
+  callSpotifyAPI('post', url, callback, returnData);
+};
+
+var putSpotifyAPI = function putSpotifyAPI(url, callback) {
+  var returnData = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+
+  callSpotifyAPI('put', url, callback, returnData);
+};
+
+var deleteSpotifyAPI = function deleteSpotifyAPI(url, callback) {
+  var returnData = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+
+  callSpotifyAPI('delete', url, callback, returnData);
 };
 
 exports.init = function (callback) {
@@ -66,29 +96,41 @@ exports.init = function (callback) {
 };
 
 exports.getUser = function (callback) {
-  callSpotifyAPI(API_URL + "/me", callback);
+  getSpotifyAPI(API_URL + "/me", callback);
 };
 
 exports.getUserProfile = function (id, callback) {
-  callSpotifyAPI(API_URL + "/users/" + id, callback);
+  getSpotifyAPI(API_URL + "/users/" + id, callback);
 };
 
 exports.getUserAlbums = function (callback) {
-  callSpotifyAPI(API_URL + "/me/albums?limit=50&offset=0", callback);
+  getSpotifyAPI(API_URL + "/me/albums?limit=50&offset=0", callback);
 };
 
 exports.getUserPlaylists = function (callback) {
-  callSpotifyAPI(API_URL + "/me/playlists?limit=50&offset=0", callback);
+  getSpotifyAPI(API_URL + "/me/playlists?limit=50&offset=0", callback);
 };
 
 exports.getArtist = function (id, callback) {
-  callSpotifyAPI(API_URL + "/artists/" + id, callback);
+  getSpotifyAPI(API_URL + "/artists/" + id, callback);
 };
 
 exports.getArtistAlbums = function (id, callback) {
-  callSpotifyAPI(API_URL + "/artists/" + id + "/albums?include_groups=album&limit=50", callback);
+  getSpotifyAPI(API_URL + "/artists/" + id + "/albums?include_groups=album&limit=50", callback);
 };
 
 exports.getAlbum = function (id, callback) {
-  callSpotifyAPI(API_URL + "/albums/" + id, callback);
+  getSpotifyAPI(API_URL + "/albums/" + id, callback);
+};
+
+exports.getPlaylistTracks = function (id, callback) {
+  getSpotifyAPI(API_URL + "/playlists/" + id + "/tracks", callback, id);
+};
+
+exports.saveAlbum = function (id, callback) {
+  putSpotifyAPI(API_URL + "/me/albums?ids=" + id, callback);
+};
+
+exports.deletePlaylist = function (id, callback) {
+  deleteSpotifyAPI(API_URL + "/playlists/" + id + '/followers', callback);
 };

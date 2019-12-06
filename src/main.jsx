@@ -49,11 +49,20 @@ const playlistSort = (a, b) => {
   return 0;
 }
 
+const SpotifyLink = (props) => (
+  <a href={props.item.external_urls.spotify} target="_blank" rel="noopener noreferrer" >
+    {props.item.name}
+  </a>
+);
+
 class Spotifyer extends React.Component {
   constructor(props) {
     super(props);
+    this.onSpotifyInit = this.onSpotifyInit.bind(this);
+    this.onGetPlaylists = this.onGetPlaylists.bind(this);
+    this.onGetPlaylistTracks = this.onGetPlaylistTracks.bind(this);
     this.clickAlbumsButton = this.clickAlbumsButton.bind(this);
-    this.changeShowTracks = this.changeShowTracks.bind(this);
+    this.changeCheckbox = this.changeCheckbox.bind(this);
 
     this.state = {
       ready: false,
@@ -61,39 +70,73 @@ class Spotifyer extends React.Component {
       user: {},
       userAlbums: [],
       userPlaylists: [],
+      userPlaylistTracks: [],
       showTracks: true,
+      showPlaylistTracks: true,
+      showPlaylists: true,
+      showAlbums: false,
     };
   }
 
   componentDidMount() {
-    spotify.init(() => {
+    spotify.init(this.onSpotifyInit);
+  }
+
+  onGetPlaylistTracks(data, id) {
+    //data.items.forEach((e, i, a) => {
+      //console.log(id + " " + e.track.name);
+    //});
+
+    this.setState((state) => {
+      let userPlaylists = state.userPlaylists;
+      const index = userPlaylists.findIndex((e) => e.id == id);
+      if (index !== -1) {
+        if (typeof userPlaylists[index].trackList === 'undefined') {
+          userPlaylists[index].trackList = [];
+        }
+
+        userPlaylists[index].trackList = [...userPlaylists[index].trackList, ...data.items];
+      }
+
+      return {
+        userPlaylists: userPlaylists,
+      };
+    });
+  }
+
+  onGetPlaylists(data) {
+    console.log(data);
+
+    this.setState((state) => ({
+      userPlaylists: [...state.userPlaylists, ...data.items].sort(playlistSort),
+    }));
+
+    data.items.forEach((e, i, a) => {
+      spotify.getPlaylistTracks(e.id, this.onGetPlaylistTracks);
+    });
+  }
+
+  onSpotifyInit() {
+    this.setState({
+      ready: true,
+    });
+
+    spotify.getUser((data) => {
+      console.log(data);
       this.setState({
-        ready: true,
-      });
-
-      spotify.getUser((data) => {
-        console.log(data);
-        this.setState({
-          user: data,
-        });
-      });
-
-      spotify.getUserAlbums((data) => {
-        console.log(data);
-        
-        this.setState((state) => ({
-          userAlbums: [...state.userAlbums, ...data.items].sort(albumSort),
-        }));
-      });
-
-      spotify.getUserPlaylists((data) => {
-        console.log(data);
-        
-        this.setState((state) => ({
-          userPlaylists: [...state.userPlaylists, ...data.items].sort(playlistSort),
-        }));
+        user: data,
       });
     });
+
+    spotify.getUserAlbums((data) => {
+      console.log(data);
+
+      this.setState((state) => ({
+        userAlbums: [...state.userAlbums, ...data.items].sort(albumSort),
+      }));
+    });
+
+    spotify.getUserPlaylists(this.onGetPlaylists);
   }
 
   clickAlbumsButton(artistId) {
@@ -112,7 +155,16 @@ class Spotifyer extends React.Component {
     });
   }
 
-  renderPlaylistTable() {
+  changeCheckbox(e) {
+    const name = e.target.name;
+    const checked = e.target.checked;
+
+    this.setState({
+      [name]: checked,
+    });
+  }
+
+  renderPlaylistTrackTable() {
     return (
       <table border={1}>
         <thead>
@@ -126,12 +178,81 @@ class Spotifyer extends React.Component {
           </tr>
         </thead>
         <tbody>
+          {this.state.userPlaylistTracks.map((e,i) => (
+            <tr key={i.toString()}>
+              <td>
+                <a href={e.track.external_urls.spotify} target="_blank" rel="noopener noreferrer">
+                  {e.track.name}
+                </a>
+                ...{msToDuration(e.track.duration_ms)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  }
+
+  clickDeletePlaylist(id) {
+    spotify.deletePlaylist(id);
+  }
+
+  clickSaveAlbum(id) {
+    spotify.saveAlbum(id);
+  }
+
+  renderPlaylistTable() {
+    return (
+      <table border={1}>
+        <thead>
+          <tr>
+            <th>
+              Name
+              <input type="checkbox" id="showPlaylistTracks" name="showPlaylistTracks" checked={this.state.showPlaylistTracks} onChange={this.changeCheckbox}/>
+              <label htmlFor="showPlaylistTracks">
+                Show Tracks
+              </label>
+            </th>
+            <th>
+              # of Tracks
+            </th>
+          </tr>
+        </thead>
+        <tbody>
           {this.state.userPlaylists.map((e,i) => (
             <tr key={i.toString()}>
               <td>
                 <a href={e.external_urls.spotify} target="_blank" rel="noopener noreferrer" >
                   {e.name}
                 </a>
+                <button onClick={() => this.clickDeletePlaylist(e.id)}>
+                  Delete Playlist
+                </button>
+      {(this.state.showPlaylistTracks && e.trackList) ?
+                  <table border={1}>
+                    {e.trackList.map((e2,i2) => (
+                      <tr key={i2.toString()}>
+                        <td>
+                          <SpotifyLink item={e2.track.artists[0]} />
+                        </td>
+                        <td>
+                          <SpotifyLink item={e2.track} />
+                        </td>
+                        <td>
+                          {msToDuration(e2.track.duration_ms)}
+                        </td>
+                        <td>
+                          <SpotifyLink item={e2.track.album} />
+                          <button onClick={() => this.clickSaveAlbum(e2.track.album.id)}>
+                            Save Album
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </table>
+                :
+                  ""
+                }
               </td>
               <td>
                 {e.tracks.total}
@@ -141,14 +262,6 @@ class Spotifyer extends React.Component {
         </tbody>
       </table>
     );
-  }
-
-  changeShowTracks(e) {
-    const showTracks = e.target.checked;
-
-    this.setState({
-      showTracks: showTracks,
-    });
   }
 
   renderAlbumTable() {
@@ -168,7 +281,7 @@ class Spotifyer extends React.Component {
             <th>
               Album Title
               <br />
-              <input type="checkbox" id="showTracks" checked={this.state.showTracks} onChange={this.changeShowTracks}/>
+              <input type="checkbox" id="showTracks" name="showTracks" checked={this.state.showTracks} onChange={this.changeCheckbox}/>
               <label htmlFor="showTracks">
                 Show Tracks
               </label>
@@ -237,16 +350,19 @@ class Spotifyer extends React.Component {
   render() {
     return (
       <div className="spotifyer">
-        <input type="checkbox" id="showPlaylists" disabled checked />
+{/*
+        {this.renderPlaylistTrackTable()}
+*/}
+        <input type="checkbox" id="showPlaylists" name="showPlaylists" onChange={this.changeCheckbox} checked={this.state.showPlaylists}/>
         <label htmlFor="showPlaylists">
           Show Playlists
         </label>
-        {this.renderPlaylistTable()}
-        <input type="checkbox" id="showAlbums" disabled checked />
+        <input type="checkbox" id="showAlbums" name="showAlbums" onChange={this.changeCheckbox} checked={this.state.showAlbums}/>
         <label htmlFor="showAlbums">
           Show Albums
         </label>
-        {this.renderAlbumTable()}
+        {this.state.showPlaylists ? this.renderPlaylistTable() : ''}
+        {this.state.showAlbums ? this.renderAlbumTable() : ''}
         <ObjectTable object={this.state.user} />
         <button disabled={!this.state.ready} onClick={() => {this.clickAlbumsButton(spotify.ACDC_ID)}}>
           Get AC/DC Albums
