@@ -4,8 +4,10 @@
   "private": true,
   "scripts": {
     "start": "nodemon ./bin/www",
-    "compile": "npx babel --watch src --out-dir babel-out --presets react-app/prod",
-    "browserify": "browserify babel-out/main.js -o public/js/spotify-frontend-bundle.js"
+    "babel": "npx babel src --out-dir babel-out --presets react-app/prod",
+    "babelw": "npx babel --watch src --out-dir babel-out --presets react-app/prod",
+    "build": "browserify -d babel-out/main.js -o public/js/spotify-frontend-bundle.js",
+    "buildw": "watchify babel-out/main.js -o public/js/spotify-frontend-bundle.js --debug --verbose"
   },
   "dependencies": {
     "axios": "^0.19.0",
