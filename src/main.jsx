@@ -1,5 +1,8 @@
 const spotify = require('./spotify-browser.js');
 
+const Row = ReactBootstrap.Row;
+const Col = ReactBootstrap.Col;
+
 const msToDuration = (ms) => {
   const sec = Math.floor(ms / 1000);
   const minutes = Math.floor(sec / 60);
@@ -60,6 +63,8 @@ const TrackRows = ({tracks}) => (
     {tracks.map((e,i) => (
       <tr key={i.toString()}>
         <td>
+        </td>
+        <td>
           <SpotifyLink item={e.track.artists[0]} />
         </td>
         <td>
@@ -70,13 +75,54 @@ const TrackRows = ({tracks}) => (
         </td>
         <td>
           <SpotifyLink item={e.track.album} />
+{/*
           <button onClick={() => this.clickSaveAlbum(e.track.album.id)}>
             Save Album
           </button>
+*/}
         </td>
       </tr>
     ))}
   </React.Fragment>
+);
+
+const TrackTable = ({tracks}) => (
+  <table className="table table-sm">
+    <thead className="">
+      <tr>
+        <th>
+          Artist
+        </th>
+        <th>
+          Title
+        </th>
+        <th>
+          Album
+        </th>
+        <th>
+          Length
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {tracks.map((e,i) => (
+        <tr key={i.toString()}>
+          <td>
+            <SpotifyLink item={e.track.artists[0]} />
+          </td>
+          <td>
+            <SpotifyLink item={e.track} />
+          </td>
+          <td>
+            <SpotifyLink item={e.track.album} />
+          </td>
+          <td>
+            {msToDuration(e.track.duration_ms)}
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
 );
 
 class Spotifyer extends React.Component {
@@ -95,8 +141,8 @@ class Spotifyer extends React.Component {
       userAlbums: [],
       userPlaylists: [],
       userPlaylistTracks: [],
-      showTracks: true,
-      showPlaylistTracks: true,
+      showTracks: false,
+      showPlaylistTracks: false,
       showPlaylists: true,
       showAlbums: false,
     };
@@ -151,7 +197,7 @@ class Spotifyer extends React.Component {
     });
 
     spotify.getUserAlbums((data) => {
-      console.log(data);
+      //console.log(data);
 
       this.setState((state) => ({
         userAlbums: [...state.userAlbums, ...data.items].sort(albumSort),
@@ -225,12 +271,11 @@ class Spotifyer extends React.Component {
 
   renderPlaylistTable() {
     return (
-      <table border={1}>
-        <thead>
+      <table className="table table-sm playlists">
+        <thead className="sticky-top">
           <tr>
             <th>
-              Name
-              <input type="checkbox" id="showPlaylistTracks" name="showPlaylistTracks" checked={this.state.showPlaylistTracks} onChange={this.changeCheckbox}/>
+              Playlist Name <input type="checkbox" id="showPlaylistTracks" name="showPlaylistTracks" checked={this.state.showPlaylistTracks} onChange={this.changeCheckbox}/>
               <label htmlFor="showPlaylistTracks">
                 Show Tracks
               </label>
@@ -281,11 +326,19 @@ class Spotifyer extends React.Component {
                   }
         */}
                 </td>
-                <td>
+                <td className="text-right">
                   {e.tracks.total}
                 </td>
               </tr>
-              <TrackRows tracks={e.trackList} />
+              {(this.state.showPlaylistTracks && e.trackList) &&
+                <tr>
+                  <td colspan={2}>
+                    <TrackTable tracks={e.trackList} />
+                  </td>
+                </tr>}
+    {/*
+              {(this.state.showPlaylistTracks && e.trackList) && <TrackRows tracks={e.trackList} />}
+    */}
             </React.Fragment>
           ))}
         </tbody>
@@ -295,8 +348,8 @@ class Spotifyer extends React.Component {
 
   renderAlbumTable() {
     return (
-      <table border={1}>
-        <thead>
+      <table className="table table-sm albums">
+        <thead className="sticky-top">
           <tr>
             <th>
               <input type="checkbox" id="showImage" disabled checked readOnly />
@@ -332,7 +385,7 @@ class Spotifyer extends React.Component {
         <tbody>
           {this.state.userAlbums.map((e,i) => (
             <tr key={i.toString()}>
-              <td>
+              <td className="text-center">
                 <img src={e.album.images[2].url} alt="" />
               </td>
               <td>
@@ -360,13 +413,13 @@ class Spotifyer extends React.Component {
               <td>
                 {e.album.label}
               </td>
-              <td>
+              <td className="text-right">
                 {e.album.popularity}
               </td>
               <td>
                 {e.album.release_date}
               </td>
-              <td>
+              <td className="text-right">
                 {e.album.total_tracks}
               </td>
             </tr>
@@ -382,23 +435,35 @@ class Spotifyer extends React.Component {
 {/*
         {this.renderPlaylistTrackTable()}
 */}
-        <input type="checkbox" id="showPlaylists" name="showPlaylists" onChange={this.changeCheckbox} checked={this.state.showPlaylists}/>
-        <label htmlFor="showPlaylists">
-          Show Playlists
-        </label>
-        <input type="checkbox" id="showAlbums" name="showAlbums" onChange={this.changeCheckbox} checked={this.state.showAlbums}/>
-        <label htmlFor="showAlbums">
-          Show Albums
-        </label>
+        <Row>
+          <Col>
+            <input type="checkbox" id="showPlaylists" name="showPlaylists" onChange={this.changeCheckbox} checked={this.state.showPlaylists}/>
+            <label htmlFor="showPlaylists">
+              Show Playlists
+            </label>
+          </Col>
+        </Row>
+        <Row>
+          <Col>
+            <input type="checkbox" id="showAlbums" name="showAlbums" onChange={this.changeCheckbox} checked={this.state.showAlbums}/>
+            <label htmlFor="showAlbums">
+              Show Albums
+            </label>
+          </Col>
+        </Row>
         {this.state.showPlaylists ? this.renderPlaylistTable() : ''}
         {this.state.showAlbums ? this.renderAlbumTable() : ''}
+{/*
         <ObjectTable object={this.state.user} />
+*/}
+{/*
         <button disabled={!this.state.ready} onClick={() => {this.clickAlbumsButton(spotify.ACDC_ID)}}>
           Get AC/DC Albums
         </button>
         <button disabled={!this.state.ready} onClick={() => {this.clickAlbumsButton(spotify.NICKLOWE_ID)}}>
           Get Nick Lowe Albums
         </button>
+*/}
         {this.state.albums.map((e,i) => (
           <div key={i.toString()}>
             <img src={e.images[1].url} style={{float: "left", }} alt="" />
@@ -427,39 +492,18 @@ class Spotifyer extends React.Component {
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-      </header>
+    <ReactBootstrap.Container fluid>
       <a href={spotify.LOGIN_URL}>
         Login to Spotify
       </a>
       <Spotifyer />
-    </div>
+    </ReactBootstrap.Container>
   );
 }
 
 
 
 const e = React.createElement;
-
-class LikeButton extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { liked: false };
-  }
-
-  render() {
-    if (this.state.liked) {
-      return 'You liked this.';
-    }
-
-    return e(
-      'button',
-      { onClick: () => this.setState({ liked: true }) },
-      'Like'
-    );
-  }
-}
 
 const domContainer = document.querySelector('#root');
 ReactDOM.render(e(App), domContainer);

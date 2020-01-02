@@ -76,12 +76,15 @@ let access_tokens = {};
 axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
 
 exports.getAccessToken = (callback, code = '') => {
+  let refresh_token = '';
+
   if (access_tokens[code] !== undefined) {
     console.log('using cached access token');
     access_tokens[code].age = (new Date().valueOf() - access_tokens[code].start_time) / 1000;
     console.log(access_tokens[code]);
     if (access_tokens[code].age >= access_tokens[code].expires_in) {
       console.log('access token expired');
+      refresh_token = access_tokens[code].refresh_token;
     } else {
       callback(access_tokens[code]);
       return;
@@ -96,6 +99,10 @@ exports.getAccessToken = (callback, code = '') => {
   if (code) {
     postData.code = code;
     postData.redirect_uri = "http://localhost:3000/api/token";  // required by spotify but ignored by us
+  }
+
+  if (refresh_token) {
+    postData.code = refresh_token;
   }
 
   axios({
