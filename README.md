@@ -1,5 +1,5 @@
 # spotify-frontend
-web based front end for Spotify API with Express backend
+web based frontend for Spotify API with Express backend
 
 npm start: starts the Express server
 
