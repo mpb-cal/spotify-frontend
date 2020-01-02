@@ -1,5 +1,7 @@
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+var _this = this;
+
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
@@ -80,21 +82,62 @@ var SpotifyLink = function SpotifyLink(props) {
   );
 };
 
+var TrackRows = function TrackRows(_ref2) {
+  var tracks = _ref2.tracks;
+  return React.createElement(
+    React.Fragment,
+    null,
+    tracks.map(function (e, i) {
+      return React.createElement(
+        'tr',
+        { key: i.toString() },
+        React.createElement(
+          'td',
+          null,
+          React.createElement(SpotifyLink, { item: e.track.artists[0] })
+        ),
+        React.createElement(
+          'td',
+          null,
+          React.createElement(SpotifyLink, { item: e.track })
+        ),
+        React.createElement(
+          'td',
+          null,
+          msToDuration(e.track.duration_ms)
+        ),
+        React.createElement(
+          'td',
+          null,
+          React.createElement(SpotifyLink, { item: e.track.album }),
+          React.createElement(
+            'button',
+            { onClick: function onClick() {
+                return _this.clickSaveAlbum(e.track.album.id);
+              } },
+            'Save Album'
+          )
+        )
+      );
+    })
+  );
+};
+
 var Spotifyer = function (_React$Component) {
   _inherits(Spotifyer, _React$Component);
 
   function Spotifyer(props) {
     _classCallCheck(this, Spotifyer);
 
-    var _this = _possibleConstructorReturn(this, (Spotifyer.__proto__ || Object.getPrototypeOf(Spotifyer)).call(this, props));
+    var _this2 = _possibleConstructorReturn(this, (Spotifyer.__proto__ || Object.getPrototypeOf(Spotifyer)).call(this, props));
 
-    _this.onSpotifyInit = _this.onSpotifyInit.bind(_this);
-    _this.onGetPlaylists = _this.onGetPlaylists.bind(_this);
-    _this.onGetPlaylistTracks = _this.onGetPlaylistTracks.bind(_this);
-    _this.clickAlbumsButton = _this.clickAlbumsButton.bind(_this);
-    _this.changeCheckbox = _this.changeCheckbox.bind(_this);
+    _this2.onSpotifyInit = _this2.onSpotifyInit.bind(_this2);
+    _this2.onGetPlaylists = _this2.onGetPlaylists.bind(_this2);
+    _this2.onGetPlaylistTracks = _this2.onGetPlaylistTracks.bind(_this2);
+    _this2.clickAlbumsButton = _this2.clickAlbumsButton.bind(_this2);
+    _this2.changeCheckbox = _this2.changeCheckbox.bind(_this2);
 
-    _this.state = {
+    _this2.state = {
       ready: false,
       albums: [],
       user: {},
@@ -106,7 +149,7 @@ var Spotifyer = function (_React$Component) {
       showPlaylists: true,
       showAlbums: false
     };
-    return _this;
+    return _this2;
   }
 
   _createClass(Spotifyer, [{
@@ -127,10 +170,6 @@ var Spotifyer = function (_React$Component) {
           return e.id == id;
         });
         if (index !== -1) {
-          if (typeof userPlaylists[index].trackList === 'undefined') {
-            userPlaylists[index].trackList = [];
-          }
-
           userPlaylists[index].trackList = [].concat(_toConsumableArray(userPlaylists[index].trackList), _toConsumableArray(data.items));
         }
 
@@ -142,9 +181,13 @@ var Spotifyer = function (_React$Component) {
   }, {
     key: 'onGetPlaylists',
     value: function onGetPlaylists(data) {
-      var _this2 = this;
+      var _this3 = this;
 
       console.log(data);
+
+      data.items.forEach(function (e) {
+        return e.trackList = [];
+      });
 
       this.setState(function (state) {
         return {
@@ -153,13 +196,13 @@ var Spotifyer = function (_React$Component) {
       });
 
       data.items.forEach(function (e, i, a) {
-        spotify.getPlaylistTracks(e.id, _this2.onGetPlaylistTracks);
+        spotify.getPlaylistTracks(e.id, _this3.onGetPlaylistTracks);
       });
     }
   }, {
     key: 'onSpotifyInit',
     value: function onSpotifyInit() {
-      var _this3 = this;
+      var _this4 = this;
 
       this.setState({
         ready: true
@@ -167,7 +210,7 @@ var Spotifyer = function (_React$Component) {
 
       spotify.getUser(function (data) {
         console.log(data);
-        _this3.setState({
+        _this4.setState({
           user: data
         });
       });
@@ -175,7 +218,7 @@ var Spotifyer = function (_React$Component) {
       spotify.getUserAlbums(function (data) {
         console.log(data);
 
-        _this3.setState(function (state) {
+        _this4.setState(function (state) {
           return {
             userAlbums: [].concat(_toConsumableArray(state.userAlbums), _toConsumableArray(data.items)).sort(albumSort)
           };
@@ -187,7 +230,7 @@ var Spotifyer = function (_React$Component) {
   }, {
     key: 'clickAlbumsButton',
     value: function clickAlbumsButton(artistId) {
-      var _this4 = this;
+      var _this5 = this;
 
       this.setState({
         albums: []
@@ -196,9 +239,9 @@ var Spotifyer = function (_React$Component) {
       spotify.getArtistAlbums(artistId, function (data) {
         data.items.forEach(function (e, i, a) {
           spotify.getAlbum(e.id, function (data) {
-            _this4.setState(function (state) {
+            _this5.setState(function (state) {
               return {
-                albums: [].concat(_toConsumableArray(_this4.state.albums), [data]).sort(artistAlbumSort)
+                albums: [].concat(_toConsumableArray(_this5.state.albums), [data]).sort(artistAlbumSort)
               };
             });
           });
@@ -273,8 +316,6 @@ var Spotifyer = function (_React$Component) {
   }, {
     key: 'renderPlaylistTable',
     value: function renderPlaylistTable() {
-      var _this5 = this;
-
       return React.createElement(
         'table',
         { border: 1 },
@@ -307,66 +348,27 @@ var Spotifyer = function (_React$Component) {
           null,
           this.state.userPlaylists.map(function (e, i) {
             return React.createElement(
-              'tr',
+              React.Fragment,
               { key: i.toString() },
               React.createElement(
-                'td',
+                'tr',
                 null,
                 React.createElement(
-                  'a',
-                  { href: e.external_urls.spotify, target: '_blank', rel: 'noopener noreferrer' },
-                  e.name
+                  'td',
+                  null,
+                  React.createElement(
+                    'a',
+                    { href: e.external_urls.spotify, target: '_blank', rel: 'noopener noreferrer' },
+                    e.name
+                  )
                 ),
                 React.createElement(
-                  'button',
-                  { onClick: function onClick() {
-                      return _this5.clickDeletePlaylist(e.id);
-                    } },
-                  'Delete Playlist'
-                ),
-                _this5.state.showPlaylistTracks && e.trackList ? React.createElement(
-                  'table',
-                  { border: 1 },
-                  e.trackList.map(function (e2, i2) {
-                    return React.createElement(
-                      'tr',
-                      { key: i2.toString() },
-                      React.createElement(
-                        'td',
-                        null,
-                        React.createElement(SpotifyLink, { item: e2.track.artists[0] })
-                      ),
-                      React.createElement(
-                        'td',
-                        null,
-                        React.createElement(SpotifyLink, { item: e2.track })
-                      ),
-                      React.createElement(
-                        'td',
-                        null,
-                        msToDuration(e2.track.duration_ms)
-                      ),
-                      React.createElement(
-                        'td',
-                        null,
-                        React.createElement(SpotifyLink, { item: e2.track.album }),
-                        React.createElement(
-                          'button',
-                          { onClick: function onClick() {
-                              return _this5.clickSaveAlbum(e2.track.album.id);
-                            } },
-                          'Save Album'
-                        )
-                      )
-                    );
-                  })
-                ) : ""
+                  'td',
+                  null,
+                  e.tracks.total
+                )
               ),
-              React.createElement(
-                'td',
-                null,
-                e.tracks.total
-              )
+              React.createElement(TrackRows, { tracks: e.trackList })
             );
           })
         )

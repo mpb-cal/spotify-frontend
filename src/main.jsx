@@ -55,6 +55,30 @@ const SpotifyLink = (props) => (
   </a>
 );
 
+const TrackRows = ({tracks}) => (
+  <React.Fragment>
+    {tracks.map((e,i) => (
+      <tr key={i.toString()}>
+        <td>
+          <SpotifyLink item={e.track.artists[0]} />
+        </td>
+        <td>
+          <SpotifyLink item={e.track} />
+        </td>
+        <td>
+          {msToDuration(e.track.duration_ms)}
+        </td>
+        <td>
+          <SpotifyLink item={e.track.album} />
+          <button onClick={() => this.clickSaveAlbum(e.track.album.id)}>
+            Save Album
+          </button>
+        </td>
+      </tr>
+    ))}
+  </React.Fragment>
+);
+
 class Spotifyer extends React.Component {
   constructor(props) {
     super(props);
@@ -91,10 +115,6 @@ class Spotifyer extends React.Component {
       let userPlaylists = state.userPlaylists;
       const index = userPlaylists.findIndex((e) => e.id == id);
       if (index !== -1) {
-        if (typeof userPlaylists[index].trackList === 'undefined') {
-          userPlaylists[index].trackList = [];
-        }
-
         userPlaylists[index].trackList = [...userPlaylists[index].trackList, ...data.items];
       }
 
@@ -106,6 +126,8 @@ class Spotifyer extends React.Component {
 
   onGetPlaylists(data) {
     console.log(data);
+
+    data.items.forEach((e) => e.trackList = []);
 
     this.setState((state) => ({
       userPlaylists: [...state.userPlaylists, ...data.items].sort(playlistSort),
@@ -220,44 +242,51 @@ class Spotifyer extends React.Component {
         </thead>
         <tbody>
           {this.state.userPlaylists.map((e,i) => (
-            <tr key={i.toString()}>
-              <td>
-                <a href={e.external_urls.spotify} target="_blank" rel="noopener noreferrer" >
-                  {e.name}
-                </a>
-                <button onClick={() => this.clickDeletePlaylist(e.id)}>
-                  Delete Playlist
-                </button>
-      {(this.state.showPlaylistTracks && e.trackList) ?
-                  <table border={1}>
-                    {e.trackList.map((e2,i2) => (
-                      <tr key={i2.toString()}>
-                        <td>
-                          <SpotifyLink item={e2.track.artists[0]} />
-                        </td>
-                        <td>
-                          <SpotifyLink item={e2.track} />
-                        </td>
-                        <td>
-                          {msToDuration(e2.track.duration_ms)}
-                        </td>
-                        <td>
-                          <SpotifyLink item={e2.track.album} />
-                          <button onClick={() => this.clickSaveAlbum(e2.track.album.id)}>
-                            Save Album
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </table>
-                :
-                  ""
-                }
-              </td>
-              <td>
-                {e.tracks.total}
-              </td>
-            </tr>
+            <React.Fragment key={i.toString()}>
+              <tr>
+                <td>
+                  <a href={e.external_urls.spotify} target="_blank" rel="noopener noreferrer" >
+                    {e.name}
+                  </a>
+        {/*
+                  <button onClick={() => this.clickDeletePlaylist(e.id)}>
+                    Delete Playlist
+                  </button>
+        */}
+{/*
+                  {(this.state.showPlaylistTracks && e.trackList) ?
+                    <table border={1}>
+                      {e.trackList.map((e2,i2) => (
+                        <tr key={i2.toString()}>
+                          <td>
+                            <SpotifyLink item={e2.track.artists[0]} />
+                          </td>
+                          <td>
+                            <SpotifyLink item={e2.track} />
+                          </td>
+                          <td>
+                            {msToDuration(e2.track.duration_ms)}
+                          </td>
+                          <td>
+                            <SpotifyLink item={e2.track.album} />
+                            <button onClick={() => this.clickSaveAlbum(e2.track.album.id)}>
+                              Save Album
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </table>
+                  :
+                    ""
+                  }
+        */}
+                </td>
+                <td>
+                  {e.tracks.total}
+                </td>
+              </tr>
+              <TrackRows tracks={e.trackList} />
+            </React.Fragment>
           ))}
         </tbody>
       </table>
