@@ -63,12 +63,12 @@ Manually (Client Credentials Flow):
 
 const querystring = require('querystring');
 const axios = require('axios');
+const secrets = require('./secrets.js');
 
 const API_URL = "https://api.spotify.com/v1";
 const TOKEN_URL = "https://accounts.spotify.com/api/token";
 const CLIENT_ID = 'f4aaced9159b4631b9189635284d0344';
-const CLIENT_SECRET = '3b673fc381ad468aa25aa76a7b7a16f1';
-const ENCODED = Buffer.from(CLIENT_ID + ":" + CLIENT_SECRET).toString('base64');
+const ENCODED = Buffer.from(CLIENT_ID + ":" + secrets.CLIENT_SECRET).toString('base64');
 
 // store with sessions?
 let access_tokens = {};
