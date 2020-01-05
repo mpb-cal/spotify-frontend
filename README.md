@@ -5,7 +5,7 @@ A web based frontend for Spotify API with Express backend.
 
 browse to http://localhost:3000
 
-before editing:
+before editing (in separate consoles):
 
 `npm start babelw`
 
