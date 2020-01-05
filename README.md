@@ -1,14 +1,14 @@
 # spotify-frontend
-web based frontend for Spotify API with Express backend
+A web based frontend for Spotify API with Express backend.
 
-npm start: starts the Express server
+`npm start`: starts the Express server
 
-browse to localhost:3000
+browse to http://localhost:3000
 
 before editing:
 
-npm start babelw
+`npm start babelw`
 
-npm start buildw
+`npm start buildw`
 
 
