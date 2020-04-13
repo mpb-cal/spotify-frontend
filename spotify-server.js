@@ -21,6 +21,14 @@ Click on your app, click on "Edit Settings", and add the Redirect URL (http://lo
 Download the code in https://github.com/spotify/web-api-auth-examples/tree/master/authorization_code
 and run node app.js and browse to :8888
 
+1. Link to https://accounts.spotify.com/authorize (open in browser, user logs in)
+2. User gets redirected back to localhost:3000/api/token?code=CODE
+3. server should use this CODE plus client secret to get ACCESS TOKEN  and REFRESH TOKEN from
+    https://accounts.spotify.com/api/token
+4. then redirect browser to a url with ACCESS TOKEN and REFRESH TOKEN: 
+  localhost:3000/?token=...&refresh_token=...
+
+
 The sample app works like this:
   get authorization code from spotify:
     send client id to -->
@@ -31,13 +39,6 @@ The sample app works like this:
   get user data:
     send acess token to --> https://api.spotify.com/v1/me --> receive user data
  
-1. Link to https://accounts.spotify.com/authorize (open in browser, user logs in)
-2. User gets redirected back to localhost?code=CODE
-3. server should use this CODE plus client secret to get access TOKEN from
-    https://accounts.spotify.com/api/token
-4. then redirect browser to a url with TOKEN
-
-
 Manually (Client Credentials Flow):
   1. Get an access token from Spotify:
     - Use https://www.base64encode.org/ (command line base64 did not work) to encode client_id:client_secret
