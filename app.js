@@ -23,10 +23,6 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'html/index.html'));
-});
-
 // called from browser as api/token for client credentials
 // or redirected from spotify login as api/token?code=... for authorized credentials
 app.get('/api/token', function(req, res, next) {
