@@ -1,7 +1,9 @@
 const spotify = require('./spotify-browser.js');
+const FileSaver = require('file-saver');
 
 const Row = ReactBootstrap.Row;
 const Col = ReactBootstrap.Col;
+const Button = ReactBootstrap.Button;
 
 const msToDuration = (ms) => {
   const sec = Math.floor(ms / 1000);
@@ -133,6 +135,7 @@ class Spotifyer extends React.Component {
     this.onGetPlaylistTracks = this.onGetPlaylistTracks.bind(this);
     this.clickAlbumsButton = this.clickAlbumsButton.bind(this);
     this.changeCheckbox = this.changeCheckbox.bind(this);
+    this.clickExportAlbums = this.clickExportAlbums.bind(this);
 
     this.state = {
       ready: false,
@@ -143,8 +146,8 @@ class Spotifyer extends React.Component {
       userPlaylistTracks: [],
       showTracks: false,
       showPlaylistTracks: false,
-      showPlaylists: true,
-      showAlbums: false,
+      showPlaylists: false,
+      showAlbums: true,
     };
   }
 
@@ -189,22 +192,22 @@ class Spotifyer extends React.Component {
       ready: true,
     });
 
+/*
     spotify.getUser((data) => {
       console.log(data);
       this.setState({
         user: data,
       });
     });
+*/
 
     spotify.getUserAlbums((data) => {
-      //console.log(data);
-
       this.setState((state) => ({
         userAlbums: [...state.userAlbums, ...data.items].sort(albumSort),
       }));
     });
 
-    spotify.getUserPlaylists(this.onGetPlaylists);
+    //spotify.getUserPlaylists(this.onGetPlaylists);
   }
 
   clickAlbumsButton(artistId) {
@@ -267,6 +270,14 @@ class Spotifyer extends React.Component {
 
   clickSaveAlbum(id) {
     spotify.saveAlbum(id);
+  }
+
+  clickExportAlbums() {
+    var blob = new Blob(
+      [JSON.stringify({userAlbums: this.state.userAlbums})], 
+      {type: "text/plain;charset=utf-8"}
+    );
+    FileSaver.saveAs(blob, "userAlbums.json");
   }
 
   renderPlaylistTable() {
@@ -451,6 +462,14 @@ class Spotifyer extends React.Component {
             </label>
           </Col>
         </Row>
+        <Row>
+          <Col>
+            <Button onClick={this.clickExportAlbums} className="">
+              Export Albums
+            </Button>
+          </Col>
+        </Row>
+          
         {this.state.showPlaylists ? this.renderPlaylistTable() : ''}
         {this.state.showAlbums ? this.renderAlbumTable() : ''}
 {/*

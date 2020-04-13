@@ -35,7 +35,10 @@ app.get('/api/token', function(req, res, next) {
       if (typeof(req.query.code) === 'undefined') {
         res.send(token_data);
       } else {
-        res.redirect('/?token=' + token_data.access_token);
+        res.redirect(
+          '/?access_token=' + token_data.access_token + 
+          '&refresh_token=' + token_data.refresh_token
+        );
       }
     },
     req.query.code

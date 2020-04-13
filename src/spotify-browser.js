@@ -1,6 +1,7 @@
 const querystring = require('querystring');
 
 const CLIENT_ID = 'f4aaced9159b4631b9189635284d0344';
+const EXPIRED_MSG = 'The access token expired';
 const API_URL = "https://api.spotify.com/v1";
 const TOKEN_ADDRESS = "api/token";
 exports.ACDC_ID = "711MCceyCBcFnzjGY4Q7Un";
@@ -35,15 +36,18 @@ exports.LOGIN_URL = "https://accounts.spotify.com/authorize?" +
   });
 
 let access_token = "";
+let refresh_token = "";
 
 axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
 
 exports.getAccessToken = (callback) => {
   // look for user-level access token in URL
   const urlParams = new URLSearchParams(window.location.search);
-  const token = urlParams.get('token');
-  if (token) {
-    access_token = token;
+  const access_token_param = urlParams.get('access_token');
+  if (access_token_param) {
+    access_token = access_token_param;
+    const refresh_token_param = urlParams.get('refresh_token');
+    refresh_token = refresh_token_param;
     callback();
     return;
   }
@@ -65,6 +69,16 @@ exports.getAccessToken = (callback) => {
 }
 
 const callSpotifyAPI = (method, url, callback, returnData = null) => {
+  console.log("callSpotifyAPI: " + url);
+/*
+  const storedData = JSON.parse(localStorage.getItem(url));
+  if (storedData) {
+    console.log("using cached data");
+    console.log(localStorage.getItem(url));
+    callback(storedData, returnData);
+  }
+*/
+
   axios({
     method: method,
     url: url,
@@ -72,18 +86,27 @@ const callSpotifyAPI = (method, url, callback, returnData = null) => {
       Authorization: "Bearer " + access_token,
     },
   }).then((response) => {
-    if (returnData) {
+/*
+    localStorage.setItem(url, JSON.stringify(response.data));
+    console.log(localStorage.getItem(url));
+*/
+    //if (returnData) {
       callback(response.data, returnData);
-    } else {
-      callback(response.data);
-    }
+    //} else {
+      //callback(response.data);
+    //}
 
     if (response.data.next !== null) {
       callSpotifyAPI(method, response.data.next, callback, returnData);
     }
   })
   .catch((error) => {
-    console.log(error);
+    console.log("callSpotifyAPI error: " +  error);
+    if (error.response) {
+      console.log(error.response.data.error.message);
+      if (error.response.data.error.message === EXPIRED_MSG) {
+      }
+    }
   });
 }
 
