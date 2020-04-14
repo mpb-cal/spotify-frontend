@@ -3,7 +3,10 @@ const querystring = require('querystring');
 const CLIENT_ID = 'f4aaced9159b4631b9189635284d0344';
 const EXPIRED_MSG = 'The access token expired';
 const API_URL = "https://api.spotify.com/v1";
-const TOKEN_ADDRESS = "api/token";
+const TOKEN_ADDRESS = "/api/token";
+const SERVER_PORT = 3000;
+const TOKEN_URL =
+  window.location.protocol + '//' + window.location.hostname + ':' + SERVER_PORT + TOKEN_ADDRESS;
 exports.ACDC_ID = "711MCceyCBcFnzjGY4Q7Un";
 exports.NICKLOWE_ID = "3BqaUtuQmqIHg7B5Bc7fP7";
 const SCOPES = 
@@ -31,7 +34,8 @@ exports.LOGIN_URL = "https://accounts.spotify.com/authorize?" +
     response_type: 'code',
     client_id: CLIENT_ID,
     scope: SCOPES,
-    redirect_uri: "http://localhost:3000/" + TOKEN_ADDRESS,
+    //redirect_uri: "http://localhost:3000/" + TOKEN_ADDRESS,
+    redirect_uri: TOKEN_URL,
     state: "HGYGyy7tujjgHGFF",
   });
 
@@ -55,7 +59,7 @@ exports.getAccessToken = (callback) => {
   // otherwise, get generic access token from server
   axios({
     method: "GET",
-    url: TOKEN_ADDRESS,
+    url: TOKEN_URL,
     responseType: 'json',
   }).then((response) => {
     console.log(response);
