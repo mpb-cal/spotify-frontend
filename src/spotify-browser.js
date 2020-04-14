@@ -3,7 +3,10 @@ const querystring = require('querystring');
 const CLIENT_ID = 'f4aaced9159b4631b9189635284d0344';
 const EXPIRED_MSG = 'The access token expired';
 const API_URL = "https://api.spotify.com/v1";
-const TOKEN_ADDRESS = "api/token";
+const TOKEN_ADDRESS = "/api/token";
+const SERVER_PORT = 3000;
+const TOKEN_URL =
+  window.location.protocol + '//' + window.location.hostname + ':' + SERVER_PORT + TOKEN_ADDRESS;
 exports.ACDC_ID = "711MCceyCBcFnzjGY4Q7Un";
 exports.NICKLOWE_ID = "3BqaUtuQmqIHg7B5Bc7fP7";
 const SCOPES = 
@@ -31,12 +34,13 @@ exports.LOGIN_URL = "https://accounts.spotify.com/authorize?" +
     response_type: 'code',
     client_id: CLIENT_ID,
     scope: SCOPES,
-    redirect_uri: "http://localhost:3000/" + TOKEN_ADDRESS,
+    //redirect_uri: "http://localhost:3000/" + TOKEN_ADDRESS,
+    redirect_uri: TOKEN_URL,
     state: "HGYGyy7tujjgHGFF",
   });
 
-let access_token = "";
-let refresh_token = "";
+let m_access_token = "";
+let m_refresh_token = "";
 
 axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
 
@@ -45,9 +49,9 @@ exports.getAccessToken = (callback) => {
   const urlParams = new URLSearchParams(window.location.search);
   const access_token_param = urlParams.get('access_token');
   if (access_token_param) {
-    access_token = access_token_param;
+    m_access_token = access_token_param;
     const refresh_token_param = urlParams.get('refresh_token');
-    refresh_token = refresh_token_param;
+    m_refresh_token = refresh_token_param;
     callback();
     return;
   }
@@ -59,7 +63,7 @@ exports.getAccessToken = (callback) => {
     responseType: 'json',
   }).then((response) => {
     console.log(response);
-    access_token = response.data.access_token;
+    m_access_token = response.data.access_token;
     callback();
   })
   .catch((error) => {
@@ -83,7 +87,7 @@ const callSpotifyAPI = (method, url, callback, returnData = null) => {
     method: method,
     url: url,
     headers: {
-      Authorization: "Bearer " + access_token,
+      Authorization: "Bearer " + m_access_token,
     },
   }).then((response) => {
 /*

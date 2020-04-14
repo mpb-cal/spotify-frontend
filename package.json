@@ -9,7 +9,7 @@
     "bundle": "browserify -d babel-out/main.js -o public/js/spotify-frontend-bundle.js",
     "bundlew": "watchify babel-out/main.js -o public/js/spotify-frontend-bundle.js --debug --verbose",
     "build": "npm run babel && npm run bundle",
-    "build:watch": "watch \"npm run build\" src"
+    "build:watch": "npx watch \"npm run build\" src"
   },
   "dependencies": {
     "axios": "^0.19.0",

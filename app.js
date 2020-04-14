@@ -23,18 +23,16 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'html/index.html'));
-});
-
-// called from browser as api/token for client credentials
-// or redirected from spotify login as api/token?code=... for authorized credentials
+// requested from browser as /api/token for client credentials
+// or redirected from spotify login as /api/token?code=... for authorized credentials
 app.get('/api/token', function(req, res, next) {
   spotify.getAccessToken(
     (token_data) => {
       if (typeof(req.query.code) === 'undefined') {
+        // called from browser
         res.send(token_data);
       } else {
+        // called from Spotify
         res.redirect(
           '/?access_token=' + token_data.access_token + 
           '&refresh_token=' + token_data.refresh_token

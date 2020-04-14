@@ -64,7 +64,7 @@ Manually (Client Credentials Flow):
 
 const querystring = require('querystring');
 const axios = require('axios');
-const secrets = require('./secrets.js');
+const secrets = require('./secrets.local.js');
 
 const API_URL = "https://api.spotify.com/v1";
 const TOKEN_URL = "https://accounts.spotify.com/api/token";

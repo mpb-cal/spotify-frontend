@@ -4,6 +4,8 @@ const FileSaver = require('file-saver');
 const Row = ReactBootstrap.Row;
 const Col = ReactBootstrap.Col;
 const Button = ReactBootstrap.Button;
+const Form = ReactBootstrap.Form;
+const FormGroup = ReactBootstrap.FormGroup;
 
 const msToDuration = (ms) => {
   const sec = Math.floor(ms / 1000);
@@ -136,6 +138,7 @@ class Spotifyer extends React.Component {
     this.clickAlbumsButton = this.clickAlbumsButton.bind(this);
     this.changeCheckbox = this.changeCheckbox.bind(this);
     this.clickExportAlbums = this.clickExportAlbums.bind(this);
+    this.changeChooseFile = this.changeChooseFile.bind(this);
 
     this.state = {
       ready: false,
@@ -201,11 +204,13 @@ class Spotifyer extends React.Component {
     });
 */
 
+/*
     spotify.getUserAlbums((data) => {
       this.setState((state) => ({
         userAlbums: [...state.userAlbums, ...data.items].sort(albumSort),
       }));
     });
+*/
 
     //spotify.getUserPlaylists(this.onGetPlaylists);
   }
@@ -278,6 +283,27 @@ class Spotifyer extends React.Component {
       {type: "text/plain;charset=utf-8"}
     );
     FileSaver.saveAs(blob, "userAlbums.json");
+  }
+
+  changeChooseFile(e) {
+    let files = e.target.files;
+    if (files.length > 0) {
+      let file = files[0];
+      if (typeof file !== 'undefined') {
+        let reader = new FileReader();
+        reader.readAsText(file);
+        reader.onloadend = () => {
+          let data = JSON.parse(reader.result);
+          if (typeof data.userAlbums !== 'undefined') {
+            let userAlbums = data.userAlbums;
+            console.log(userAlbums);
+            this.setState({
+              userAlbums
+            });
+          }
+        };
+      }
+    }
   }
 
   renderPlaylistTable() {
@@ -463,11 +489,23 @@ class Spotifyer extends React.Component {
           </Col>
         </Row>
         <Row>
-          <Col>
+          <Col xs="auto">
             <Button onClick={this.clickExportAlbums} className="">
-              Export Albums
+              Export Album Data
             </Button>
           </Col>
+          <Form className="">
+            <Form.Row>
+              <FormGroup>
+                <Col xs="auto">
+                  Import Album Data:
+                </Col>
+                <Col xs="auto">
+                  <Form.Control type="file" className="mb-3" onChange={this.changeChooseFile} />
+                </Col>
+              </FormGroup>
+            </Form.Row>
+          </Form>
         </Row>
           
         {this.state.showPlaylists ? this.renderPlaylistTable() : ''}
