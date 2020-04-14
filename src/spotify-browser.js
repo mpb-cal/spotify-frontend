@@ -39,8 +39,8 @@ exports.LOGIN_URL = "https://accounts.spotify.com/authorize?" +
     state: "HGYGyy7tujjgHGFF",
   });
 
-let access_token = "";
-let refresh_token = "";
+let m_access_token = "";
+let m_refresh_token = "";
 
 axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
 
@@ -49,9 +49,9 @@ exports.getAccessToken = (callback) => {
   const urlParams = new URLSearchParams(window.location.search);
   const access_token_param = urlParams.get('access_token');
   if (access_token_param) {
-    access_token = access_token_param;
+    m_access_token = access_token_param;
     const refresh_token_param = urlParams.get('refresh_token');
-    refresh_token = refresh_token_param;
+    m_refresh_token = refresh_token_param;
     callback();
     return;
   }
@@ -59,11 +59,11 @@ exports.getAccessToken = (callback) => {
   // otherwise, get generic access token from server
   axios({
     method: "GET",
-    url: TOKEN_URL,
+    url: TOKEN_ADDRESS,
     responseType: 'json',
   }).then((response) => {
     console.log(response);
-    access_token = response.data.access_token;
+    m_access_token = response.data.access_token;
     callback();
   })
   .catch((error) => {
@@ -87,7 +87,7 @@ const callSpotifyAPI = (method, url, callback, returnData = null) => {
     method: method,
     url: url,
     headers: {
-      Authorization: "Bearer " + access_token,
+      Authorization: "Bearer " + m_access_token,
     },
   }).then((response) => {
 /*
