@@ -4,5 +4,5 @@ babel-out/*
 babel-out\main.js
 babel-out\*
 public/js
-secrets.js
+secrets.local.js
 
