@@ -32,7 +32,7 @@ app.get('/api/token', function(req, res, next) {
         // called from browser
         res.send(token_data);
       } else {
-        // called from Spotify
+        // redirected from Spotify
         res.redirect(
           '/?access_token=' + token_data.access_token + 
           '&refresh_token=' + token_data.refresh_token

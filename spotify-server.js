@@ -66,6 +66,7 @@ const querystring = require('querystring');
 const axios = require('axios');
 const secrets = require('./secrets.local.js');
 
+const REDIRECT_URL = 'http://18.144.5.121:3000/api/token';
 const API_URL = "https://api.spotify.com/v1";
 const TOKEN_URL = "https://accounts.spotify.com/api/token";
 const CLIENT_ID = 'f4aaced9159b4631b9189635284d0344';
@@ -99,7 +100,7 @@ exports.getAccessToken = (callback, code = '') => {
 
   if (code) {
     postData.code = code;
-    postData.redirect_uri = "http://localhost:3000/api/token";  // required by spotify but ignored by us
+    postData.redirect_uri = REDIRECT_URL; // required by spotify but ignored by us
   }
 
   if (refresh_token) {
@@ -127,7 +128,4 @@ exports.getAccessToken = (callback, code = '') => {
     console.log(error);
   });
 }
-
-//getAccessToken();
-
 
