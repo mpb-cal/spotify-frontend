@@ -5,4 +5,5 @@ babel-out\main.js
 babel-out\*
 public/js
 secrets.local.js
+tags
 
