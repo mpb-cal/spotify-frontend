@@ -27,11 +27,19 @@ window.onSpotifyWebPlaybackSDKReady = () => {
       <tbody>
         {Object.keys(object).map((e,i) => (
           <tr key={i.toString()}>
-            <td>
+            <td valign='top'>
               {e}
             </td>
-            <td>
-              {object[e] ? object[e].toString() : ""}
+            <td valign='top'>
+              {object[e] ? 
+                (typeof object[e] === 'object' ?
+                  <ObjectTable object={object[e]} />
+                :
+                  object[e].toString() 
+                )
+              : 
+                ""
+              }
             </td>
           </tr>
         ))}
@@ -292,13 +300,11 @@ PUT 	/v1/me/player 	Transfer a User's Playback
         });
     */
 
-    /*
         spotify.getUserAlbums((data) => {
           this.setState((state) => ({
             userAlbums: [...state.userAlbums, ...data.items].sort(albumSort),
           }));
         });
-    */
 
         //spotify.getUserPlaylists(this.onGetPlaylists);
       });
