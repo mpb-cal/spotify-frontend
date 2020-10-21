@@ -107,14 +107,18 @@ exports.getAccessToken = (callback, code = '') => {
     postData.code = refresh_token;
   }
 
-  axios({
+  let options = {
     method: "POST",
     url: TOKEN_URL,
     data: querystring.stringify(postData),
     headers: {
       Authorization: "Basic " + ENCODED,
     },
-  }).then((response) => {
+  };
+
+  console.log(options);
+
+  axios(options).then((response) => {
     access_tokens[code] = {
       ...response.data,
       start_time: new Date().valueOf(),

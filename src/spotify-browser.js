@@ -5,10 +5,11 @@ const querystring = require('querystring');
   const CLIENT_ID = 'f4aaced9159b4631b9189635284d0344';
   const EXPIRED_MSG = 'The access token expired';
   const API_URL = "https://api.spotify.com/v1";
-  const TOKEN_HREF = "/api/token";
+  const TOKEN_HREF = "/spotify-frontend/token";
   // redirect URI must be added to app settings in Spotify dashboard,
   // which is why this is hard coded:
-  const REDIRECT_URL = 'http://18.144.5.121:3000/api/token';
+  //const REDIRECT_URL = 'http://18.144.5.121/api/token';
+  const REDIRECT_URL = 'http://18.144.5.121' + TOKEN_HREF;
   exports.ACDC_ID = "711MCceyCBcFnzjGY4Q7Un";
   exports.NICKLOWE_ID = "3BqaUtuQmqIHg7B5Bc7fP7";
   const SCOPES = 
@@ -65,7 +66,7 @@ const querystring = require('querystring');
       }).then((response) => {
         console.log(response);
         m_access_token = response.data.access_token;
-        callback();
+        callback(null);
       })
       .catch((error) => {
         console.log('axios error:');
@@ -89,7 +90,12 @@ const querystring = require('querystring');
     m_player.addListener('playback_error', ({ message }) => { console.error(message); });
 
     // Playback status updates
-    m_player.addListener('player_state_changed', state => { console.log(state); });
+/*
+    m_player.addListener('player_state_changed', state => {
+      console.log('player_state_changed:');
+      console.log(state);
+    });
+*/
 
     // Ready
     m_player.addListener('ready', ({ device_id }) => {
@@ -97,7 +103,7 @@ const querystring = require('querystring');
       m_device_id = device_id;
       putSpotifyAPI(API_URL + "/me/player", null, null, {device_ids: [m_device_id]});
 
-      callback();
+      callback(m_player);
     });
 
     // Not Ready
@@ -222,12 +228,28 @@ const querystring = require('querystring');
     getSpotifyAPI(API_URL + "/me/player/devices/", callback);
   }
 
-  exports.play = () => {
-    putSpotifyAPI(API_URL + "/me/player/play");
+  exports.play = (uris = []) => {
+    putSpotifyAPI(API_URL + "/me/player/play", null, null, uris.length ? {uris} : null);
   }
 
   exports.pause = () => {
     putSpotifyAPI(API_URL + "/me/player/pause");
+  }
+
+  exports.seek = (position_ms) => {
+    putSpotifyAPI(API_URL + "/me/player/seek?position_ms=" + position_ms);
+  }
+
+  exports.repeat = (state) => {
+    putSpotifyAPI(API_URL + "/me/player/repeat?state=" + state);
+  }
+
+  exports.volume = (volume_percent) => {
+    putSpotifyAPI(API_URL + "/me/player/volume?volume_percent=" + volume_percent);
+  }
+
+  exports.shuffle = (state) => {
+    putSpotifyAPI(API_URL + "/me/player/shuffle?state=" + state);
   }
 
   exports.getPlayer = (callback) => {
@@ -244,11 +266,15 @@ const querystring = require('querystring');
 
 /*
 PUT 	/v1/me/player/seek 	Seek To Position In Currently Playing Track 	-
+  position_ms
 PUT 	/v1/me/player/repeat 	Set Repeat Mode On User’s Playback 	-
+  state = track, context or off
 PUT 	/v1/me/player/volume 	Set Volume For User's Playback 	-
+  volume_percent
 POST 	/v1/me/player/next 	Skip User’s Playback To Next Track 	-
 POST 	/v1/me/player/previous 	Skip User’s Playback To Previous Track 	-
 PUT 	/v1/me/player/shuffle 	Toggle Shuffle For User’s Playback 	-
+  state = true or false
 POST 	/v1/me/player/queue 	Add an Item to the User's Playback Queue 	-
 */
 })();

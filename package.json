@@ -6,8 +6,8 @@
     "start": "nodemon ./bin/www",
     "babel": "npx babel src --out-dir babel-out --presets react-app/prod",
     "babelw": "npx babel --watch src --out-dir babel-out --presets react-app/prod",
-    "bundle": "browserify -d babel-out/main.js -o public/js/spotify-frontend-bundle.js",
-    "bundlew": "watchify babel-out/main.js -o public/js/spotify-frontend-bundle.js --debug --verbose",
+    "bundle": "browserify -d babel-out/main.js -o ~/laravel1/public/js/spotify-frontend-bundle.js",
+    "bundlew": "watchify babel-out/main.js -o ~/laravel1/public/js/spotify-frontend-bundle.js --debug --verbose",
     "build": "npm run babel && npm run bundle",
     "build:watch": "npx watch \"npm run build\" src"
   },
