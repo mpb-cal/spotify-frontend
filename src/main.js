@@ -1,7 +1,16 @@
 window.onSpotifyWebPlaybackSDKReady = () => {
+/*
+  if (process.env.NODE_ENV !== 'production') {
+    const { worker } = require('./mocks/browser')
+    worker.start()
+  }
+*/
+
   const spotify = require('./spotify-browser.js');
   const FileSaver = require('file-saver');
 
+  const useState = React.useState;
+  const useEffect = React.useEffect;
   const Row = ReactBootstrap.Row;
   const Col = ReactBootstrap.Col;
   const Button = ReactBootstrap.Button;
@@ -22,6 +31,69 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     return 0;
   }
 
+  function Spotifyer2() {
+    const [ready, setReady] = useState(false);
+    const [albums, setAlbums] = useState([]);
+    const [user, setUser] = useState({});
+    const [playerInfo, setPlayerInfo] = useState({});
+    const [playerState, setPlayerState] = useState({});
+    const [recentlyPlayed, setRecentlyPlayed] = useState({});
+    const [currentlyPlaying, setCurrentlyPlaying] = useState({});
+    const [devices, setDevices] = useState([]);
+    const [userAlbums, setUserAlbums] = useState([]);
+    const [userPlaylists, setUserPlaylists] = useState([]);
+    const [userPlaylistTracks, setUserPlaylistTracks] = useState([]);
+    const [showTracks, setShowTracks] = useState(false);
+    const [showPlaylistTracks, setShowPlaylistTracks] = useState(false);
+    const [showPlaylists, setShowPlaylists] = useState(false);
+    const [showAlbums, setShowAlbums] = useState(true);
+
+    useEffect(() => {
+      spotify.init((player) => {
+        setReady(true);
+
+        spotify.getUserAlbums((data) => {
+          setUserAlbums(data.items.sort(albumSort));
+        });
+      });
+    }, []);
+
+    let trackName = '';
+    let artistName = '';
+    if (playerState && typeof playerState.track_window !== 'undefined') {
+      trackName = playerState.track_window.current_track.name;
+      artistName = playerState.track_window.current_track.artists.
+        reduce((acc, e) => acc + e.name + ', ', '').replace(/, $/, '');
+    }
+
+    function getDevices() {
+      spotify.getDevices(data => setDevices(data.devices));
+    }
+
+    return (
+      <div>
+        <h1>
+          Spotifyer2 - {ready ? "Ready" : "Not Ready"}
+        </h1>
+        <Player name={trackName} artist={artistName} />
+        <div>
+          <button onClick={getDevices}>
+            Get Devices
+          </button>
+          {devices.map((device, i) => (
+            <ObjectTable key={i.toString()} object={device} />
+          ))}
+        </div>
+        <AlbumTable 
+          albums={userAlbums} 
+          showTracks={false}
+          onChangeCheckbox={null} 
+          playTrack={null} 
+        />
+      </div>
+    );
+  }
+
   class Spotifyer extends React.Component {
     constructor(props) {
       super(props);
@@ -31,6 +103,12 @@ window.onSpotifyWebPlaybackSDKReady = () => {
       this.changeCheckbox = this.changeCheckbox.bind(this);
       this.clickExportAlbums = this.clickExportAlbums.bind(this);
       this.changeChooseFile = this.changeChooseFile.bind(this);
+      this.getDevices = this.getDevices.bind(this);
+      this.getPlayer = this.getPlayer.bind(this);
+      this.getUserAlbums = this.getUserAlbums.bind(this);
+      this.getRecentlyPlayed = this.getRecentlyPlayed.bind(this);
+      this.getCurrentlyPlaying = this.getCurrentlyPlaying.bind(this);
+      this.onGetPlaylistTracks = this.onGetPlaylistTracks.bind(this);
 
       this.state = {
         ready: false,
@@ -100,6 +178,14 @@ window.onSpotifyWebPlaybackSDKReady = () => {
       spotify.getPlayer((data) => {
         this.setState({
           playerInfo: data,
+        });
+      });
+    }
+
+    getUserAlbums() {
+      spotify.getUserAlbums((data) => {
+        this.setState({
+          albums: data,
         });
       });
     }
@@ -357,6 +443,11 @@ window.onSpotifyWebPlaybackSDKReady = () => {
             </button>
             <ObjectTable object={this.state.currentlyPlaying} />
           </div>
+          <div>
+            <button onClick={() => {this.getUserAlbums()}}>
+              Get User Albums
+            </button>
+          </div>
   {/*
           {this.renderPlaylistTrackTable()}
   */}
@@ -447,7 +538,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
   }
 
   const Player = (props) => (
-    <div className="player p-3 sticky-top">
+    <div className="player p-3">
       <h4>Track: {props.name}</h4>
       <h5>Artist(s): {props.artist}</h5>
       <button onClick={() => spotify.play()}>
@@ -687,6 +778,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
         <a href={spotify.LOGIN_URL}>
           Login to Spotify
         </a>
+        <Spotifyer2 />
         <Spotifyer />
       </ReactBootstrap.Container>
     );
