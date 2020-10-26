@@ -54,7 +54,6 @@ const fetch = window.fetch;
     // if it's there, we are logged in and we can use it to call the Spotify API.
     const urlParams = new URLSearchParams(window.location.search);
     const access_token_param = urlParams.get('access_token');
-    //const access_token_param = 'BQDMUA71wO8h4Z5zaFG7oSaddzNoATKKta7rHl78xuoUayzYuUotyrWVKGbdP1tMdDSb5V8Saaxa2hWKjUpr6cmR0h_FMtoU7TY0m2Z1Notb_2_4Q83PhL0tY8Ng41s-SC-z61-vsQVL6dBe20uzHUSZES0ACVCYum3TRnPrF5M8Cm3bvtL0ijsc8XMelUtne__G_T5-wfkK9QadoqX9QLMXncurTt-gYawIclIG-s3wS5A8GUMg3I5474XtB-hSxv8ymBUF3j17e3CEGA&';
 
     if (access_token_param) {
       m_access_token = access_token_param;
@@ -66,19 +65,19 @@ const fetch = window.fetch;
         return;
       }
 
-      callback(null);
-      //setupPlayer(callback);
+      setupPlayer(callback);
     } else {
       // otherwise, get a generic access token from server
 
+/*
       if (process.env.NODE_ENV !== 'test') {
         callback(null);
         return;
       }
+*/
 
       fetch(TOKEN_URL, {
         method: "GET",
-        //responseType: 'json',
       })
         .then(response => response.json())
         .then(data => {
@@ -149,9 +148,11 @@ const fetch = window.fetch;
     }
 */
 
+/*
     if (process.env.NODE_ENV !== 'test') {
       return;
     }
+*/
 
     fetch(url, {
       method: method,
