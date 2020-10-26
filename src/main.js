@@ -1,14 +1,17 @@
 window.onSpotifyWebPlaybackSDKReady = () => {
+/*
+  if (process.env.NODE_ENV !== 'production') {
+    const { worker } = require('./mocks/browser')
+    worker.start()
+  }
+*/
+
   const spotify = require('./spotify-browser.js');
   const FileSaver = require('file-saver');
-
-  const Row = ReactBootstrap.Row;
-  const Col = ReactBootstrap.Col;
-  const Button = ReactBootstrap.Button;
-  const Form = ReactBootstrap.Form;
-  const FormGroup = ReactBootstrap.FormGroup;
-  const Accordion = ReactBootstrap.Accordion;
-  const Card = ReactBootstrap.Card;
+  const useState = React.useState;
+  const useEffect = React.useEffect;
+  const useContext = React.useContext;
+  const UserContext = React.createContext();
 
   const msToDuration = (ms) => {
     const sec = Math.floor(ms / 1000);
@@ -22,16 +25,191 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     return 0;
   }
 
+  function Spotifyer() {
+    const [ready, setReady] = useState(false);
+    const [albums, setAlbums] = useState([]);
+    const [user, setUser] = useState({});
+    const [playerInfo, setPlayerInfo] = useState({});
+    const [playerState, setPlayerState] = useState({});
+    const [recentlyPlayed, setRecentlyPlayed] = useState({});
+    const [currentlyPlaying, setCurrentlyPlaying] = useState({});
+    const [devices, setDevices] = useState([]);
+    const [userAlbums, setUserAlbums] = useState([]);
+    const [userPlaylists, setUserPlaylists] = useState([]);
+    const [userPlaylistTracks, setUserPlaylistTracks] = useState([]);
+    const [showPlaylistTracks, setShowPlaylistTracks] = useState(false);
+    const [showPlaylists, setShowPlaylists] = useState(false);
+    const [showAlbums, setShowAlbums] = useState(true);
+
+    useEffect(() => {
+      spotify.init((player) => {
+        setReady(true);
+
+        if (player) {
+          player.addListener('player_state_changed', player_state => {
+            console.log('player_state_changed:');
+            console.log(player_state);
+            setPlayerState(player_state);
+            document.title = player_state.track_window.current_track.name;
+          });
+        }
+
+        spotify.getUserAlbums((data) => {
+          let albums = data.items.sort(albumSort).map(e => e.album);
+          setUserAlbums(albums);
+        });
+      });
+    }, []);
+
+    let trackName = '';
+    let artistName = '';
+    if (playerState && typeof playerState.track_window !== 'undefined') {
+      trackName = playerState.track_window.current_track.name;
+      artistName = playerState.track_window.current_track.artists.
+        reduce((acc, e) => acc + e.name + ', ', '').replace(/, $/, '');
+    }
+
+    function getDevices() {
+      spotify.getDevices(data => setDevices(data.devices));
+    }
+
+    function getPlayer() {
+      spotify.getPlayer(data => setPlayerInfo(data));
+    }
+
+    function getUserAlbums() {
+      spotify.getUserAlbums(data => setAlbums(data));
+    }
+
+    function getRecentlyPlayed() {
+      spotify.getRecentlyPlayed(data => setRecentlyPlayed(data));
+    }
+
+    function getCurrentlyPlaying() {
+      spotify.getCurrentlyPlaying(data => setCurrentlyPlaying(data));
+    }
+
+    function playTrack(uri) {
+      spotify.play([uri]);
+    }
+
+    function onExportAlbumData() {
+      var blob = new Blob(
+        [JSON.stringify({userAlbums: userAlbums})], 
+        {type: "text/plain;charset=utf-8"}
+      );
+      FileSaver.saveAs(blob, "userAlbums.json");
+    }
+
+    function onImportAlbumData(event) {
+      let files = event.target.files;
+      if (files.length > 0) {
+        let file = files[0];
+        if (typeof file !== 'undefined') {
+          let reader = new FileReader();
+          reader.readAsText(file);
+          reader.onloadend = () => {
+            let data = JSON.parse(reader.result);
+            if (typeof data.userAlbums !== 'undefined') {
+              let userAlbums = data.userAlbums;
+              setUserAlbums(userAlbums);
+            }
+          };
+        }
+      }
+    }
+
+    return (
+      <div className="spotifyer">
+        <h1>
+          Spotifyer - {ready ? "Ready" : "Not Ready"}
+        </h1>
+        <Player name={trackName} artist={artistName} />
+        <div>
+          <button onClick={getDevices}>
+            Get Devices
+          </button>
+          {devices.map((device, i) => (
+            <ObjectTable key={i.toString()} object={device} />
+          ))}
+        </div>
+        <div>
+          <button onClick={getPlayer}>
+            Get Player Info
+          </button>
+          <ObjectTable object={playerInfo} />
+        </div>
+        <div>
+          <button onClick={getRecentlyPlayed}>
+            Get Recently Played
+          </button>
+          <ObjectTable object={recentlyPlayed} />
+        </div>
+        <div>
+          <button onClick={getCurrentlyPlaying}>
+            Get Currently Playing
+          </button>
+          <ObjectTable object={currentlyPlaying} />
+        </div>
+        <div>
+          <button onClick={getUserAlbums}>
+            Get User Albums
+          </button>
+        </div>
+        <div>
+          <button onClick={onExportAlbumData} className="">
+            Export Album Data
+          </button>
+        </div>
+        <div>
+          Import Album Data:
+          <input type="file" onChange={onImportAlbumData} />
+        </div>
+        <AlbumTable 
+          albums={userAlbums} 
+          playTrack={playTrack} 
+        />
+      </div>
+    );
+  }
+
+  const Player = (props) => (
+    <div className="player p-3">
+      <h4>Track: {props.name}</h4>
+      <h5>Artist(s): {props.artist}</h5>
+      <button onClick={() => spotify.play()}>
+        Play
+      </button>
+      <button onClick={() => spotify.pause()}>
+        Pause
+      </button>
+      <button onClick={() => spotify.seek(10000)}>
+        Seek 00:10
+      </button>
+      <button onClick={() => spotify.seek(60000)}>
+        Seek 01:00
+      </button>
+    </div>
+  );
+
   const ObjectTable = ({object}) => (
     <table border={1}>
       <tbody>
         {Object.keys(object).map((e,i) => (
           <tr key={i.toString()}>
-            <td>
+            <td valign='top'>
               {e}
             </td>
-            <td>
-              {object[e] ? object[e].toString() : ""}
+            <td valign='top'>
+              {object[e] ? 
+                (typeof object[e] === 'object' ?
+                  <ObjectTable object={object[e]} />
+                :
+                  object[e].toString() 
+                )
+              : 
+                ""
+              }
             </td>
           </tr>
         ))}
@@ -63,34 +241,6 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     <a href={props.item.external_urls.spotify} target="_blank" rel="noopener noreferrer" >
       {props.item.name}
     </a>
-  );
-
-  const TrackRows = ({tracks}) => (
-    <React.Fragment>
-      {tracks.map((e,i) => (
-        <tr key={i.toString()}>
-          <td>
-          </td>
-          <td>
-            <SpotifyLink item={e.track.artists[0]} />
-          </td>
-          <td>
-            <SpotifyLink item={e.track} />
-          </td>
-          <td>
-            {msToDuration(e.track.duration_ms)}
-          </td>
-          <td>
-            <SpotifyLink item={e.track.album} />
-  {/*
-            <button onClick={() => this.clickSaveAlbum(e.track.album.id)}>
-              Save Album
-            </button>
-  */}
-          </td>
-        </tr>
-      ))}
-    </React.Fragment>
   );
 
   const TrackTable = ({tracks}) => (
@@ -132,534 +282,125 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     </table>
   );
 
-  const AlbumTrack = ({track, idx}) => {
-    return (
-      <li>
-        {track.name}.....{msToDuration(track.duration_ms)}
-          <a href={track.external_urls.spotify} target="_blank" rel="noopener noreferrer">
-            .....Open in Spotify
-          </a>
-      </li>
-    );
-  }
+  function AlbumTable({albums, playTrack}) {
+    const [showTracks, setShowTracks] = useState(false);
+    const username = useContext(UserContext);
 
-  const AlbumTable = ({albums, showTracks, onChangeCheckbox}) => (
-    <table className="table table-sm albums">
-      <thead className="sticky-top">
-        <tr>
-          <th>
+    return (
+      <div>
+        <div className="albumTableHeader albumTableRow">
+          <div>
             <input type="checkbox" id="showImage" disabled checked readOnly />
             <label htmlFor="showImage">
               Show Image
             </label>
-          </th>
-          <th>
+          </div>
+          <div>
             Artists(s)
-          </th>
-          <th>
+          </div>
+          <div>
             Album Title
             <br />
-            <input type="checkbox" id="showTracks" name="showTracks" checked={showTracks} onChange={onChangeCheckbox}/>
+            <input
+              type="checkbox"
+              id="showTracks"
+              name="showTracks"
+              checked={showTracks}
+              onChange={() => setShowTracks(!showTracks)}
+            />
             <label htmlFor="showTracks">
               Show Tracks
             </label>
-          </th>
-          <th>
+          </div>
+          <div>
             Label
-          </th>
-          <th>
+          </div>
+          <div>
             Popularity (1-100)
-          </th>
-          <th>
+          </div>
+          <div>
             Release Date
-          </th>
-          <th>
+          </div>
+          <div>
             # of Tracks
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {albums.map((e,i) => (
-          <tr key={i.toString()}>
-            <td className="text-center">
-              <img src={e.album.images[2].url} alt="" />
-            </td>
-            <td>
-              {e.album.artists[0].name}
-            </td>
-            <td>
-              <a href={e.album.external_urls.spotify} target="_blank" rel="noopener noreferrer" >
-                {e.album.name}
-              </a>
-              {showTracks ? (
-                <ol>
-                  {e.album.tracks.items.map((e2,i2) => (
-                    <AlbumTrack key={i2.toString()} track={e2} idx={i2} />
-                  ))}
-                </ol>
-              )
-              :
-              ""
-              }
-            </td>
-            <td>
-              {e.album.label}
-            </td>
-            <td className="text-right">
-              {e.album.popularity}
-            </td>
-            <td>
-              {e.album.release_date}
-            </td>
-            <td className="text-right">
-              {e.album.total_tracks}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-
-/*
-POST 	/v1/me/player/queue 	Add an Item to the User's Playback Queue 	-
-GET 	/v1/me/player/devices 	Get a User's Available Devices 	devices
-GET 	/v1/me/player 	Get Information About The User's Current Playback 	currently playing context
-GET 	/v1/me/player/recently-played 	Get Current User's Recently Played Tracks 	play history object
-GET 	/v1/me/player/currently-playing 	Get the User's Currently Playing Track 	currently playing object
-PUT 	/v1/me/player/pause 	Pause a User's Playback 	-
-PUT 	/v1/me/player/seek 	Seek To Position In Currently Playing Track 	-
-PUT 	/v1/me/player/repeat 	Set Repeat Mode On User’s Playback 	-
-PUT 	/v1/me/player/volume 	Set Volume For User's Playback 	-
-POST 	/v1/me/player/next 	Skip User’s Playback To Next Track 	-
-POST 	/v1/me/player/previous 	Skip User’s Playback To Previous Track 	-
-PUT 	/v1/me/player/play 	Start/Resume a User's Playback 	-
-PUT 	/v1/me/player/shuffle 	Toggle Shuffle For User’s Playback 	-
-PUT 	/v1/me/player 	Transfer a User's Playback
-*/
-
-  const Player = () => (
-    <div className="player m-3">
-      <h3>Player</h3>
-      <button onClick={() => spotify.play()}>
-        Play
-      </button>
-      <button onClick={() => spotify.pause()}>
-        Pause
-      </button>
-    </div>
-  );
-
-  class Spotifyer extends React.Component {
-    constructor(props) {
-      super(props);
-      this.onGetPlaylists = this.onGetPlaylists.bind(this);
-      this.onGetPlaylistTracks = this.onGetPlaylistTracks.bind(this);
-      this.clickAlbumsButton = this.clickAlbumsButton.bind(this);
-      this.changeCheckbox = this.changeCheckbox.bind(this);
-      this.clickExportAlbums = this.clickExportAlbums.bind(this);
-      this.changeChooseFile = this.changeChooseFile.bind(this);
-
-      this.state = {
-        ready: false,
-        albums: [],
-        user: {},
-        player: {},
-        recentlyPlayed: {},
-        currentlyPlaying: {},
-        devices: [],
-        userAlbums: [],
-        userPlaylists: [],
-        userPlaylistTracks: [],
-        showTracks: true,
-        showPlaylistTracks: false,
-        showPlaylists: false,
-        showAlbums: true,
-      };
-    }
-
-    componentDidMount() {
-      spotify.init(() => {
-        this.setState({
-          ready: true,
-        });
-
-    /*
-        spotify.getUser((data) => {
-          console.log(data);
-          this.setState({
-            user: data,
-          });
-        });
-    */
-
-    /*
-        spotify.getUserAlbums((data) => {
-          this.setState((state) => ({
-            userAlbums: [...state.userAlbums, ...data.items].sort(albumSort),
-          }));
-        });
-    */
-
-        //spotify.getUserPlaylists(this.onGetPlaylists);
-      });
-    }
-
-    getDevices() {
-      spotify.getDevices((data) => {
-        console.log(data);
-        this.setState({
-          devices: data.devices,
-        });
-      });
-    }
-
-    getPlayer() {
-      spotify.getPlayer((data) => {
-        console.log(data);
-        this.setState({
-          player: data,
-        });
-      });
-    }
-
-    getRecentlyPlayed() {
-      spotify.getRecentlyPlayed((data) => {
-        console.log(data);
-        this.setState({
-          recentlyPlayed: data,
-        });
-      });
-    }
-
-    getCurrentlyPlaying() {
-      spotify.getCurrentlyPlaying((data) => {
-        console.log(data);
-        this.setState({
-          currentlyPlaying: data,
-        });
-      });
-    }
-
-    onGetPlaylistTracks(data, id) {
-      //data.items.forEach((e, i, a) => {
-        //console.log(id + " " + e.track.name);
-      //});
-
-      this.setState((state) => {
-        let userPlaylists = state.userPlaylists;
-        const index = userPlaylists.findIndex((e) => e.id == id);
-        if (index !== -1) {
-          userPlaylists[index].trackList = [...userPlaylists[index].trackList, ...data.items];
-        }
-
-        return {
-          userPlaylists: userPlaylists,
-        };
-      });
-    }
-
-    onGetPlaylists(data) {
-      console.log(data);
-
-      data.items.forEach((e) => e.trackList = []);
-
-      this.setState((state) => ({
-        userPlaylists: [...state.userPlaylists, ...data.items].sort(playlistSort),
-      }));
-
-      data.items.forEach((e, i, a) => {
-        spotify.getPlaylistTracks(e.id, this.onGetPlaylistTracks);
-      });
-    }
-
-    clickAlbumsButton(artistId) {
-      this.setState({
-        albums: [],
-      });
-
-      spotify.getArtistAlbums(artistId, (data) => {
-        data.items.forEach((e,i,a) => {
-          spotify.getAlbum(e.id, (data) => {
-            this.setState((state) => ({
-              albums: [...this.state.albums, data].sort(artistAlbumSort),
-            }));
-          });
-        });
-      });
-    }
-
-    changeCheckbox(e) {
-      const name = e.target.name;
-      const checked = e.target.checked;
-
-      this.setState({
-        [name]: checked,
-      });
-    }
-
-    renderPlaylistTrackTable() {
-      return (
-        <table border={1}>
-          <thead>
-            <tr>
-              <th>
-                Name
-              </th>
-              <th>
-                # of Tracks
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {this.state.userPlaylistTracks.map((e,i) => (
-              <tr key={i.toString()}>
-                <td>
-                  <a href={e.track.external_urls.spotify} target="_blank" rel="noopener noreferrer">
-                    {e.track.name}
-                  </a>
-                  ...{msToDuration(e.track.duration_ms)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      );
-    }
-
-    clickDeletePlaylist(id) {
-      spotify.deletePlaylist(id);
-    }
-
-    clickSaveAlbum(id) {
-      spotify.saveAlbum(id);
-    }
-
-    clickExportAlbums() {
-      var blob = new Blob(
-        [JSON.stringify({userAlbums: this.state.userAlbums})], 
-        {type: "text/plain;charset=utf-8"}
-      );
-      FileSaver.saveAs(blob, "userAlbums.json");
-    }
-
-    changeChooseFile(e) {
-      let files = e.target.files;
-      if (files.length > 0) {
-        let file = files[0];
-        if (typeof file !== 'undefined') {
-          let reader = new FileReader();
-          reader.readAsText(file);
-          reader.onloadend = () => {
-            let data = JSON.parse(reader.result);
-            if (typeof data.userAlbums !== 'undefined') {
-              let userAlbums = data.userAlbums;
-              console.log(userAlbums);
-              this.setState({
-                userAlbums
-              });
-            }
-          };
-        }
-      }
-    }
-
-    renderPlaylistTable() {
-      return (
-        <table className="table table-sm playlists">
-          <thead className="sticky-top">
-            <tr>
-              <th>
-                Playlist Name <input type="checkbox" id="showPlaylistTracks" name="showPlaylistTracks" checked={this.state.showPlaylistTracks} onChange={this.changeCheckbox}/>
-                <label htmlFor="showPlaylistTracks">
-                  Show Tracks
-                </label>
-              </th>
-              <th>
-                # of Tracks
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {this.state.userPlaylists.map((e,i) => (
-              <React.Fragment key={i.toString()}>
-                <tr>
-                  <td>
-                    <a href={e.external_urls.spotify} target="_blank" rel="noopener noreferrer" >
-                      {e.name}
-                    </a>
-          {/*
-                    <button onClick={() => this.clickDeletePlaylist(e.id)}>
-                      Delete Playlist
-                    </button>
-          */}
-  {/*
-                    {(this.state.showPlaylistTracks && e.trackList) ?
-                      <table border={1}>
-                        {e.trackList.map((e2,i2) => (
-                          <tr key={i2.toString()}>
-                            <td>
-                              <SpotifyLink item={e2.track.artists[0]} />
-                            </td>
-                            <td>
-                              <SpotifyLink item={e2.track} />
-                            </td>
-                            <td>
-                              {msToDuration(e2.track.duration_ms)}
-                            </td>
-                            <td>
-                              <SpotifyLink item={e2.track.album} />
-                              <button onClick={() => this.clickSaveAlbum(e2.track.album.id)}>
-                                Save Album
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </table>
-                    :
-                      ""
-                    }
-          */}
-                  </td>
-                  <td className="text-right">
-                    {e.tracks.total}
-                  </td>
-                </tr>
-                {(this.state.showPlaylistTracks && e.trackList) &&
-                  <tr>
-                    <td colspan={2}>
-                      <TrackTable tracks={e.trackList} />
-                    </td>
-                  </tr>}
-      {/*
-                {(this.state.showPlaylistTracks && e.trackList) && <TrackRows tracks={e.trackList} />}
-      */}
-              </React.Fragment>
-            ))}
-          </tbody>
-        </table>
-      );
-    }
-
-    render() {
-      const {showPlaylists, showAlbums, showTracks, userAlbums} = this.state;
-
-      return (
-        <div className="spotifyer">
-          <Player />
-          <button onClick={() => this.getDevices()}>
-            Get Devices
-          </button>
-          {this.state.devices.map((e, i) => (
-            <ObjectTable key={i.toString()} object={e} />
-          ))}
-          <button onClick={() => this.getPlayer()}>
-            Get Player Info
-          </button>
-          <ObjectTable object={this.state.player} />
-          <button onClick={() => this.getRecentlyPlayed()}>
-            Get Recently Played
-          </button>
-          <ObjectTable object={this.state.recentlyPlayed} />
-          <button onClick={() => this.getCurrentlyPlaying()}>
-            Get Currently Playing
-          </button>
-          <ObjectTable object={this.state.currentlyPlaying} />
-  {/*
-          {this.renderPlaylistTrackTable()}
-  */}
-          <Row>
-            <Col>
-              <input type="checkbox" id="showPlaylists" name="showPlaylists" onChange={this.changeCheckbox} checked={showPlaylists}/>
-              <label htmlFor="showPlaylists">
-                Show Playlists
-              </label>
-            </Col>
-          </Row>
-          <Row>
-            <Col>
-              <input type="checkbox" id="showAlbums" name="showAlbums" onChange={this.changeCheckbox} checked={showAlbums}/>
-              <label htmlFor="showAlbums">
-                Show Albums
-              </label>
-            </Col>
-          </Row>
-          <Row>
-            <Col xs="auto">
-              <Button onClick={this.clickExportAlbums} className="">
-                Export Album Data
-              </Button>
-            </Col>
-            <Form className="">
-              <Form.Row>
-                <FormGroup>
-                  <Col xs="auto">
-                    Import Album Data:
-                  </Col>
-                  <Col xs="auto">
-                    <Form.Control type="file" className="mb-3" onChange={this.changeChooseFile} />
-                  </Col>
-                </FormGroup>
-              </Form.Row>
-            </Form>
-          </Row>
-            
-          {showPlaylists ? this.renderPlaylistTable() : ''}
-          {showAlbums ?
-            <AlbumTable 
-              albums={userAlbums} 
-              showTracks={showTracks} 
-              onChangeCheckbox={this.changeCheckbox} 
-            />
-          :
-            ''
-          }
-  {/*
-          <ObjectTable object={this.state.user} />
-  */}
-  {/*
-          <button disabled={!this.state.ready} onClick={() => {this.clickAlbumsButton(spotify.ACDC_ID)}}>
-            Get AC/DC Albums
-          </button>
-          <button disabled={!this.state.ready} onClick={() => {this.clickAlbumsButton(spotify.NICKLOWE_ID)}}>
-            Get Nick Lowe Albums
-          </button>
-  */}
-  {/*
-          {this.state.albums.map((e,i) => (
-            <div key={i.toString()}>
-              <img src={e.images[1].url} style={{float: "left", }} alt="" />
-              <div style={{float: "left", }}>
-                <a href={e.external_urls.spotify} target="_blank" rel="noopener noreferrer" >{e.name}</a><br/>
-                Release Date: {e.release_date}<br/>
-                <ol>
-                {e.tracks.items.map((e,i) => (
-                  <li key={i.toString()}>
-                    <a href={e.external_urls.spotify} target="_blank" rel="noopener noreferrer">
-                      {e.name}
-                    </a>
-                    ...{msToDuration(e.duration_ms)}
-                  </li>
-                ))}
-                </ol>
+          </div>
+        </div>
+        {albums.map((album, i) => (
+          <React.Fragment key={i.toString()}>
+            <div className="albumTableRow" key={i.toString()}>
+              <div>
+                <img src={album.images[2].url} alt="" />
               </div>
-              <div style={{clear: "both", }}>
+              <div>
+                {album.artists[0].name}
+              </div>
+              <div>
+                {album.name} -&nbsp;
+                <a href={album.external_urls.spotify} target="_blank" rel="noopener noreferrer" >
+                  Open in Spotify
+                </a>
+              </div>
+              <div>
+                {album.label}
+              </div>
+              <div>
+                {album.popularity}
+              </div>
+              <div>
+                {album.release_date}
+              </div>
+              <div>
+                {album.total_tracks}
               </div>
             </div>
-          ))}
-  */}
-        </div>
-      );
-    }
+            {showTracks ? (
+              <div className="albumTableTracksRow">
+                <div>
+                  <ol>
+                    {album.tracks.items.map((track, i2) => (
+                      <AlbumTrack
+                        key={i2.toString()}
+                        track={track}
+                        idx={i2}
+                        playTrack={playTrack} />
+                    ))}
+                  </ol>
+                </div>
+              </div>
+            )
+            :
+            ""
+            }
+          </React.Fragment>
+        ))}
+      </div>
+    );
   }
+
+  const AlbumTrack = React.memo(({track, idx, playTrack}) => {
+    return (
+      <li>
+        <a href="" onClick={(event) => {event.preventDefault(); playTrack(track.uri);}}>
+          {track.name}
+        </a>
+        .....{msToDuration(track.duration_ms)}
+          {/*
+          <a href={track.external_urls.spotify} target="_blank" rel="noopener noreferrer">
+            .....Open in Spotify
+          </a>
+          */}
+      </li>
+    );
+  });
 
   function App() {
     return (
-      <ReactBootstrap.Container fluid>
+      <UserContext.Provider value="marcb">
         <a href={spotify.LOGIN_URL}>
           Login to Spotify
         </a>
         <Spotifyer />
-      </ReactBootstrap.Container>
+      </UserContext.Provider>
     );
   }
 

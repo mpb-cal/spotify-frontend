@@ -1,2 +1,3 @@
 --exclude=public
 --exclude=babel-out
+--exclude=js-out
