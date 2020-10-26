@@ -25,7 +25,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     return 0;
   }
 
-  function Spotifyer2() {
+  function Spotifyer() {
     const [ready, setReady] = useState(false);
     const [albums, setAlbums] = useState([]);
     const [user, setUser] = useState({});
